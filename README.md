@@ -578,5 +578,3 @@ Para que un usuario pueda acceder al módulo de portería y ver los movimientos 
 - Los archivos `.env` **no deben subirse a Git** (ya están en `.gitignore`).
 - Usá siempre los archivos `.env.template` como referencia para onboarding.
 - El `start-mobile.bat` crea una regla de firewall con nombre `DonYeyo_Client`. Podés eliminarla manualmente desde el **Panel de control → Firewall de Windows → Reglas de entrada** cuando ya no la necesites.
-
-prueba
