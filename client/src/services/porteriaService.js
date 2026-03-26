@@ -18,3 +18,7 @@ export const getHistorial = (email, { desde, hasta, estado, page } = {}) =>
 
 export const getPorteros = () =>
     axios.get(`${API_URL}/masters/porteros`);
+
+export const updateTime = (id, email, nuevaHora) =>
+    axios.put(`${API_URL}/porteria/${id}/update-time`, { email, nuevaHora });
+

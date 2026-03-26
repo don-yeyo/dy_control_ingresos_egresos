@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '../../config/AuthContext';
-import { Download, Search } from 'lucide-react';
+import { Download, Search, Edit2, Check as CheckIcon, X as XIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { getHistorial } from '../../services/porteriaService';
+import { getHistorial, updateTime } from '../../services/porteriaService';
 import './Historial.css';
 
 function nDaysAgo(n) {
@@ -89,6 +89,7 @@ function Historial({ porteria }) {
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [error, setError] = useState('');
+    const [editing, setEditing] = useState(null); // { id: 1, time: '12:34' }
 
     const fetchData = useCallback(async (p = 1) => {
         setLoading(true);
@@ -111,6 +112,17 @@ function Historial({ porteria }) {
     }, [email, desde, hasta, estado]);
 
     const handleSearch = () => fetchData(1);
+
+    const handleSaveTime = async (id) => {
+        if (!editing || !editing.time) return;
+        try {
+            await updateTime(id, email, editing.time);
+            setEditing(null);
+            fetchData(page);
+        } catch (e) {
+            alert(e.response?.data?.error || 'Error al actualizar la hora');
+        }
+    };
 
     // Exportar a Excel con TODOS los registros de los filtros actuales
     const handleExport = async () => {
@@ -224,7 +236,43 @@ function Historial({ porteria }) {
                                     const colors = ESTADO_COLORS[estadoLabel] || ESTADO_COLORS[m.estado_nombre] || {};
                                     return (
                                         <tr key={m.id}>
-                                            <td style={{ whiteSpace: 'nowrap' }}>{formatFecha(m.fechaHoraCompletado || m.fechaHoraRegistro, m.estado_nombre === 'Completado')}</td>
+                                            <td style={{ whiteSpace: 'nowrap' }}>
+                                                {m.estado_nombre === 'Completado' ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                        {editing?.id === m.id ? (
+                                                            <>
+                                                                <span style={{ fontSize: '0.9rem' }}>{formatFecha(m.fechaHoraCompletado || m.fechaHoraRegistro)}</span>
+                                                                <input
+                                                                    type="time"
+                                                                    value={editing.time}
+                                                                    onChange={e => setEditing({ ...editing, time: e.target.value })}
+                                                                    className="edit-time-input"
+                                                                    autoFocus
+                                                                />
+                                                                <button onClick={() => handleSaveTime(m.id)} className="btn-icon-save" title="Guardar">
+                                                                    <CheckIcon size={14} />
+                                                                </button>
+                                                                <button onClick={() => setEditing(null)} className="btn-icon-cancel" title="Cancelar">
+                                                                    <XIcon size={14} />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {formatFecha(m.fechaHoraCompletado || m.fechaHoraRegistro, true)}
+                                                                <button
+                                                                    className="btn-edit-inline"
+                                                                    onClick={() => setEditing({ id: m.id, time: extraerHoraStr(m.fechaHoraCompletado || m.fechaHoraRegistro) })}
+                                                                    title="Corregir hora"
+                                                                >
+                                                                    <Edit2 size={12} />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    formatFecha(m.fechaHoraCompletado || m.fechaHoraRegistro, false)
+                                                )}
+                                            </td>
                                             <td>{m.persona_interna_nombre || m.idPersonaExterna || '—'}</td>
                                             <td>{m.tipo_nombre}</td>
                                             <td style={{ fontSize: '0.85rem' }}>{m.motivo}</td>

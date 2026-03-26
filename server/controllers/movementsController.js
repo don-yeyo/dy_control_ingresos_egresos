@@ -404,28 +404,6 @@ exports.getMisSolicitudes = async (req, res) => {
             whereParams.push(filtroMap[filtro]);
         }
 
-        // ---------------------------------------------------------------
-        // Filtro de visibilidad de grupo:
-        // - Sin grupo (idGrupo=0): siempre visible
-        // - Completados: siempre visibles (se ven todos los del grupo)
-        // - No-completado en un grupo: solo el de menor ordenGrupo activo
-        // ---------------------------------------------------------------
-        const groupFilter = `
-            AND (
-                m.idGrupo = 0
-                OR m.idEstado = ${ESTADO_COMPLETADO}
-                OR (
-                    m.idEstado != ${ESTADO_COMPLETADO}
-                    AND m.idGrupo > 0
-                    AND m.ordenGrupo = (
-                        SELECT MIN(m2.ordenGrupo)
-                        FROM movimientos m2
-                        WHERE m2.idGrupo = m.idGrupo
-                          AND m2.idEstado != ${ESTADO_COMPLETADO}
-                    )
-                )
-            )`;
-
         const baseQuery = `
             FROM movimientos m
             JOIN movimientoTipos mt ON m.idTipo = mt.id
@@ -435,7 +413,22 @@ exports.getMisSolicitudes = async (req, res) => {
             LEFT JOIN legajos l ON m.personaAutorizante = l.legajo
             LEFT JOIN legajos lp ON m.personaInterna = lp.legajo
             WHERE ${whereClause}
-            ${groupFilter}`;
+            -- Agrupación inteligente: evitar ruido de series encadenadas (ej. retorno)
+            -- Muestra registros simples, registros finalizados, y solo el SIGUIENTE paso activo de una serie
+            AND (
+                m.idGrupo = 0
+                OR m.idEstado NOT IN (${ESTADO_PENDIENTE}, ${ESTADO_SOLICITADO})
+                OR (
+                    m.idGrupo > 0
+                    AND m.idEstado IN (${ESTADO_PENDIENTE}, ${ESTADO_SOLICITADO})
+                    AND m.ordenGrupo = (
+                        SELECT MIN(m2.ordenGrupo)
+                        FROM movimientos m2
+                        WHERE m2.idGrupo = m.idGrupo
+                          AND m2.idEstado IN (${ESTADO_PENDIENTE}, ${ESTADO_SOLICITADO})
+                    )
+                )
+            )`;
 
         // Total para paginación
         const [[{ total }]] = await pool.query(
@@ -456,7 +449,7 @@ exports.getMisSolicitudes = async (req, res) => {
                          THEN (SELECT COUNT(*) FROM movimientos mc WHERE mc.idGrupo = m.idGrupo AND mc.idEstado = ${ESTADO_COMPLETADO})
                          ELSE 0 END AS grupo_completados
              ${baseQuery}
-             ORDER BY m.fechaHoraRegistro DESC
+             ORDER BY (m.idEstado IN (${ESTADO_PENDIENTE}, ${ESTADO_SOLICITADO})) DESC, m.fechaHoraRegistro DESC
              LIMIT ? OFFSET ?`,
             [...whereParams, pageSize, offset]
         );

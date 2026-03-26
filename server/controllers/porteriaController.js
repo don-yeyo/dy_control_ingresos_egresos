@@ -349,6 +349,66 @@ exports.getHistorial = async (req, res) => {
     }
 };
 
+// ---------------------------------------------------------------
+// @desc  Corregir la hora de un movimiento ya completado
+// @route PUT /api/porteria/:id/update-time
+// ---------------------------------------------------------------
+exports.updateTime = async (req, res) => {
+    const { id } = req.params;
+    const { email, nuevaHora } = req.body;
+
+    if (!email || !nuevaHora) return res.status(400).json({ error: 'Email y nueva hora requeridos' });
+
+    try {
+        // Verificar rol del usuario (solo Sysadmin, RRHH o Porteros pueden corregir)
+        const [userRows] = await pool.query('SELECT idRol FROM legajos WHERE email = ?', [email]);
+        const userRole = userRows.length > 0 ? userRows[0].idRol : 1;
+
+        // Si no es admin/rrhh (rol >= 2), verificar si es portero
+        if (userRole < 2) {
+            const [portRows] = await pool.query(
+                'SELECT id FROM porterias WHERE email = ? AND activa = 1',
+                [email]
+            );
+            if (portRows.length === 0) {
+                return res.status(403).json({ error: 'No tenés permisos para realizar esta acción' });
+            }
+        }
+
+        // Obtener el movimiento
+        const [movRows] = await pool.query('SELECT fechaHoraCompletado FROM movimientos WHERE id = ?', [id]);
+        if (movRows.length === 0) return res.status(404).json({ error: 'Movimiento no encontrado' });
+
+        const mov = movRows[0];
+        if (!mov.fechaHoraCompletado) {
+            return res.status(400).json({ error: 'El movimiento no está completado en el sistema' });
+        }
+
+        // Extraer la fecha (YYYY-MM-DD) del actual fechaHoraCompletado
+        // Usar substr si es un string o convertirlo si es un objeto Date
+        let fecha;
+        if (mov.fechaHoraCompletado instanceof Date) {
+            fecha = mov.fechaHoraCompletado.toISOString().slice(0, 10);
+        } else {
+            fecha = String(mov.fechaHoraCompletado).substring(0, 10);
+        }
+
+        const nuevaFechaHora = `${fecha} ${nuevaHora}:00`;
+
+        await pool.query(
+            `UPDATE movimientos 
+             SET fechaHoraCompletado = ?, 
+                 fechaHoraRegistro = ? 
+             WHERE id = ?`,
+            [nuevaFechaHora, nuevaFechaHora, id]
+        );
+
+        res.json({ message: 'Hora corregida correctamente', nuevaFechaHora });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 
 // ---------------------------------------------------------------
 // @desc  Validar QR y completar movimiento

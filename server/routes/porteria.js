@@ -17,4 +17,7 @@ router.post('/scan-qr', porteriaController.scanQR);
 // Historial con filtros y paginación
 router.get('/historial', porteriaController.getHistorial);
 
+// Corregir hora de un completado
+router.put('/:id/update-time', porteriaController.updateTime);
+
 module.exports = router;

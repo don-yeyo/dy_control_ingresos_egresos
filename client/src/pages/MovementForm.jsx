@@ -51,7 +51,7 @@ const MovementForm = () => {
             personaAutorizante: getSavedValue('personaAutorizante', ''),
             observacion: '',
             destinoDetalle: '',
-            conRegreso: false,
+            conRegreso: true,
             esRecurrente: false,
             vencimientoRecurrencias: '',
             usuario_app: currentUser.username || currentUser.email || 'anonymous'
