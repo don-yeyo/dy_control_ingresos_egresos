@@ -3,26 +3,39 @@ const pool = require('../config/db');
 // @desc    Get all legajos (paginated)
 // @route   GET /api/masters/legajos?page=&search=
 exports.getLegajos = async (req, res) => {
-    const { page = 1, search = '', limit } = req.query;
+    const { page = 1, search = '', limit, activeOnly } = req.query;
     const pageSize = limit ? parseInt(limit) : (parseInt(process.env.PAGE_SIZE_LEGAJOS) || 50);
     const offset = (Math.max(1, parseInt(page)) - 1) * pageSize;
 
     try {
-        let sql = 'SELECT id, legajo, apellido_nombre, email, esAutorizador, idRol FROM legajos';
+        let sql = 'SELECT id, legajo, apellido_nombre, email, esAutorizador, idRol, estado FROM legajos';
         let countSql = 'SELECT COUNT(*) as total FROM legajos';
         const params = [];
         const countParams = [];
+        const conditions = [];
 
         if (search) {
             const searchPattern = `%${search}%`;
-            sql += ' WHERE (legajo LIKE ? OR apellido_nombre LIKE ? OR email LIKE ?)';
-            countSql += ' WHERE (legajo LIKE ? OR apellido_nombre LIKE ? OR email LIKE ?)';
+            conditions.push('(legajo LIKE ? OR apellido_nombre LIKE ? OR email LIKE ?)');
             params.push(searchPattern, searchPattern, searchPattern);
             countParams.push(searchPattern, searchPattern, searchPattern);
         }
 
+        if (activeOnly === 'true') {
+            conditions.push('estado = 1');
+        }
+
+        if (conditions.length > 0) {
+            const whereClause = ' WHERE ' + conditions.join(' AND ');
+            sql += whereClause;
+            countSql += whereClause;
+        }
+
         sql += ' ORDER BY apellido_nombre LIMIT ? OFFSET ?';
         params.push(pageSize, offset);
+
+        const fs = require('fs');
+        fs.appendFileSync('C:\\tmp\\legajos_debug.log', `[${new Date().toISOString()}] URL: ${req.url}\nQUERY: ${JSON.stringify(req.query)}\nSQL: ${sql}\nPARAMS: ${JSON.stringify(params)}\n\n`);
 
         const [rows] = await pool.query(sql, params);
         const [[{ total }]] = await pool.query(countSql, countParams);
@@ -47,7 +60,7 @@ exports.getLegajos = async (req, res) => {
 // @desc    Create new legajo
 // @route   POST /api/masters/legajos
 exports.createLegajo = async (req, res) => {
-    const { legajo, apellido_nombre, email, idRol, esAutorizador } = req.body;
+    const { legajo, apellido_nombre, email, idRol, esAutorizador, estado } = req.body;
     
     // Validar campos básicos
     if (!legajo || !apellido_nombre) {
@@ -55,11 +68,12 @@ exports.createLegajo = async (req, res) => {
     }
 
     const finalEsAutorizador = (idRol == 2 || idRol == 100) ? 1 : (esAutorizador ? 1 : 0);
+    const finalEstado = (estado === undefined) ? 1 : (estado ? 1 : 0);
 
     try {
         const [result] = await pool.query(
-            'INSERT INTO legajos (legajo, apellido_nombre, email, idRol, esAutorizador) VALUES (?, ?, ?, ?, ?)',
-            [legajo, apellido_nombre, email || null, idRol || 1, finalEsAutorizador]
+            'INSERT INTO legajos (legajo, apellido_nombre, email, idRol, esAutorizador, estado) VALUES (?, ?, ?, ?, ?, ?)',
+            [legajo, apellido_nombre, email || null, idRol || 1, finalEsAutorizador, finalEstado]
         );
         res.json({ id: result.insertId, message: 'Legajo creado correctamente' });
     } catch (error) {
@@ -75,20 +89,22 @@ exports.createLegajo = async (req, res) => {
 // @route   PUT /api/masters/legajos/:id
 exports.updateLegajo = async (req, res) => {
     const { id } = req.params; // Usamos el ID autonumérico para mayor seguridad
-    const { legajo, apellido_nombre, email, idRol, esAutorizador } = req.body;
+    const { legajo, apellido_nombre, email, idRol, esAutorizador, estado } = req.body;
 
     const finalEsAutorizador = (idRol == 2 || idRol == 100) ? 1 : (esAutorizador ? 1 : 0);
+    const finalEstado = (estado === undefined) ? 1 : (estado ? 1 : 0);
 
     try {
         await pool.query(
-            'UPDATE legajos SET legajo = ?, apellido_nombre = ?, email = ?, idRol = ?, esAutorizador = ? WHERE id = ?',
-            [legajo, apellido_nombre, email, idRol, finalEsAutorizador, id]
+            'UPDATE legajos SET legajo = ?, apellido_nombre = ?, email = ?, idRol = ?, esAutorizador = ?, estado = ? WHERE id = ?',
+            [legajo, apellido_nombre, email || null, idRol, finalEsAutorizador, finalEstado, id]
         );
         res.json({ message: 'Legajo actualizado correctamente' });
     } catch (error) {
-        console.error('Error in updateLegajo:', error);
+        console.error('Error in updateLegajo SQL:', error);
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ error: 'El número de legajo o email ya existe' });
+            const field = error.sqlMessage?.toLowerCase().includes('email') ? 'email' : 'legajo';
+            return res.status(400).json({ error: `El ${field} ya se encuentra registrado en otro usuario.` });
         }
         res.status(500).json({ error: error.message });
     }
@@ -167,7 +183,7 @@ exports.getMe = async (req, res) => {
 
     try {
         const [rows] = await pool.query(
-            'SELECT legajo, apellido_nombre, email, esAutorizador, idRol FROM legajos WHERE email = ?',
+            'SELECT legajo, apellido_nombre, email, esAutorizador, idRol, estado FROM legajos WHERE email = ?',
             [email]
         );
         if (rows.length === 0) {

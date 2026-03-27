@@ -109,7 +109,7 @@ const MovementForm = () => {
                 }
 
                 const [l, lug, t] = await Promise.all([
-                    MastersService.getLegajos(1, '', 5000), // Traer más legajos para el buscador del formulario
+                    MastersService.getLegajos(1, '', 5000, true), // Traer solo legajos activos para el formulario
                     MastersService.getLugares(),
                     MastersService.getMovementTypes()
                 ]);
@@ -122,6 +122,10 @@ const MovementForm = () => {
                     ...item,
                     apellido_nombre: capitalizeName(item.apellido_nombre)
                 }));
+
+                console.log('DEBUG: Legajos fetched for form:', normalizedLegajos.length);
+                const testLegajo = normalizedLegajos.find(l => String(l.legajo) === '1137');
+                if (testLegajo) console.log('DEBUG: Found legajo 1137 in form list! Estado:', testLegajo.estado);
 
                 setLegajos(normalizedLegajos);
                 // Autorizadores: los que tienen esAutorizador = 1

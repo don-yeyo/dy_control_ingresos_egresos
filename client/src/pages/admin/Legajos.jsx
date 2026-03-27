@@ -27,7 +27,8 @@ const Legajos = () => {
         apellido_nombre: '',
         email: '',
         idRol: 1,
-        esAutorizador: false
+        esAutorizador: false,
+        estado: 1
     });
     const [formLoading, setFormLoading] = useState(false);
     const [formErrors, setFormErrors] = useState({});
@@ -71,7 +72,8 @@ const Legajos = () => {
             apellido_nombre: '',
             email: '',
             idRol: 1,
-            esAutorizador: false
+            esAutorizador: false,
+            estado: 1
         });
         setFormErrors({});
         setShowModal(true);
@@ -85,7 +87,8 @@ const Legajos = () => {
             apellido_nombre: legajo.apellido_nombre,
             email: legajo.email || '',
             idRol: legajo.idRol || 1,
-            esAutorizador: legajo.esAutorizador === 1
+            esAutorizador: legajo.esAutorizador === 1,
+            estado: legajo.estado ?? 1
         });
         setFormErrors({});
         setShowModal(true);
@@ -196,6 +199,7 @@ const Legajos = () => {
                             <th>Email</th>
                             <th>Rol</th>
                             <th style={{ textAlign: 'center' }}>Autorizante</th>
+                            <th style={{ textAlign: 'center' }}>Estado</th>
                             <th style={{ textAlign: 'right' }}>Acciones</th>
                         </tr>
                     </thead>
@@ -228,6 +232,11 @@ const Legajos = () => {
                                             ) : (
                                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>No</span>
                                             )}
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span className={`status-badge ${l.estado === 1 ? 'active' : 'inactive'}`}>
+                                                {l.estado === 1 ? 'Activo' : 'Inactivo'}
+                                            </span>
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
@@ -364,6 +373,28 @@ const Legajos = () => {
                             />
                             <label htmlFor="checkAuth" style={{ cursor: 'pointer', margin: 0 }}>¿Es autorizante?</label>
                         </div>
+
+                        <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '25px' }}>
+                            <div 
+                                onClick={() => !formLoading && setFormData({ ...formData, estado: formData.estado === 1 ? 0 : 1 })}
+                                className={`custom-switch ${formData.estado === 1 ? 'active' : ''}`}
+                                style={{
+                                    width: '40px', height: '22px', borderRadius: '20px',
+                                    backgroundColor: formData.estado === 1 ? 'var(--dy-red)' : '#d1d5db',
+                                    position: 'relative', cursor: formLoading ? 'not-allowed' : 'pointer',
+                                    transition: '0.3s'
+                                }}
+                            >
+                                <div style={{
+                                    width: '18px', height: '18px', borderRadius: '50%',
+                                    backgroundColor: 'white', position: 'absolute', top: '2px',
+                                    left: formData.estado === 1 ? '20px' : '2px', transition: '0.3s'
+                                }} />
+                            </div>
+                            <label style={{ cursor: 'pointer', margin: 0, fontWeight: 700 }}>
+                                {formData.estado === 1 ? 'Personal Activo' : 'Personal Inactivo'}
+                            </label>
+                        </div>
                     </div>
 
                     {formErrors.server && (
@@ -425,6 +456,10 @@ const Legajos = () => {
                 .btn-action.edit:hover { color: var(--dy-red); border-color: var(--dy-red); background: #fff1f2; }
                 .btn-action.delete:hover { color: #ef4444; border-color: #fecaca; background: #fff1f2; }
                 
+                .status-badge { padding: 4px 12px; borderRadius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+                .status-badge.active { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+                .status-badge.inactive { background: #f3f4f6; color: #4b5563; border: 1px solid #9ca3af; }
+
                 .alert-success { background: #d1fae5; color: #065f46; padding: 12px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 600; border: 1px solid #a7f3d0; }
                 
                 .legajo-form { padding: 10px 0; }
