@@ -375,8 +375,9 @@ Para agilizar el paso por los puntos de control, el sistema cuenta con validaci�
 - Elegí el origen y destino del movimiento.
 - **Artículos/Documentos:** Pulsá "Agregar" para vincular herramientas o remitos. Podés marcar artículos como "Sin Retorno" (consumibles).
 - **Comportamiento según el rol del usuario:**
-  - **Usuario autorizador:** el campo "Persona a autorizar" es un buscador editable (con opción de búsqueda extendida). El movimiento pasa directamente a estado **Pendiente**.
+  - **Usuario autorizador (RRHH / Sysadmin):** el campo "Persona a autorizar" inicia vacío para forzar la búsqueda, previniendo errores de carga. El formulario asume que crearán el movimiento para otra persona. El movimiento pasa directamente a estado **Pendiente**.
   - **Usuario NO autorizador:** el campo "Persona a autorizar" muestra su propio nombre en **modo de solo lectura** (no puede modificarlo). El subtítulo del formulario cambia a *"Complete los datos para solicitar autorización para un ingreso o egreso."* Debe seleccionar un autorizante; el movimiento queda en estado **Solicitado** hasta que el autorizante lo apruebe.
+- **Filtro de Personal Activo:** El campo "Persona a autorizar" excluye automáticamente de la lista a los legajos marcados como inactivos.
 - **Persistencia de preferencias:** los valores del formulario (tipo, origen, destino, motivo y autorizante seleccionado) se recuerdan en `localStorage` para la próxima vez que el usuario abra el formulario.
 - **Búsqueda extendida:** el checkbox "Búsqueda extendida" (solo disponible para autorizadores) cambia la búsqueda de inicio de palabra a coincidencia en cualquier parte del nombre. La preferencia también se persiste en `localStorage`.
 - **Cantidad de artículos/documentos:** Se controla con los botones `+` y `−` para mejor compatibilidad en dispositivos móviles.
@@ -446,9 +447,10 @@ Accesible desde el menú lateral. Permite:
 
 Accesible desde el menú lateral (Drawer). Permite ajustar preferencias del usuario.
 
-### 6. Auditoría
+### 6. Auditoría y Trazabilidad
 
 Todas las acciones (creación, edición, eliminación) se guardan automáticamente en la tabla `auditoria` de la base de datos mediante triggers configurados en MySQL.
+Para garantizar la precisión de la traza, los controladores Node inyectan la variable de entorno de sesión de SQL `usuario_app` previo a ejecutar los queries mitigando así la anonimidad de las modificaciones directas vía PDO/Pools HTTP.
 
 ### 8. Roles y Jerarquía de Usuarios
 
@@ -457,7 +459,7 @@ El sistema utiliza un esquema de roles jerárquicos definido por el campo `idRol
 | ID Rol | Nombre | Permisos |
 |---|---|---|
 | **1** | Usuario | Solicitante estándar. Puede crear solicitudes (estado Solicitado). |
-| **2** | RRHH | **Autorizante por defecto**. Acceso al módulo de **Gestión de Legajos** para administrar roles y estados de autorizador del personal. |
+| **2** | RRHH | **Autorizante por defecto**. Acceso al módulo de **Gestión de Legajos** para administrar personal, roles y asignar estados (Activo/Inactivo). |
 | **100** | Sysadmin | **Administrador total**. Incluye todos los permisos de RRHH y acceso técnico total. |
 
 #### Reglas de Jerarquía:
@@ -547,9 +549,11 @@ Esto:
 - **Sincronización automática:** la pantalla se actualiza en segundo plano según el intervalo definido en `VITE_SYNC_INTERVAL_SECONDS`.
 
 **Historial** (`/porteria/historial`)
-- Filtros por rango de fechas y estado
-- Tabla paginada (50 registros por página)
-- **Exportación a Excel** (.xlsx) de todos los registros filtrados
+- Carga automática de registros al ingresar a la pantalla.
+- Modal responsivo de **Filtros Avanzados** repletos de selectores tipificados y búsquedas libres de autocompletado para un cruce de datos exacto:
+  - Búsqueda cruzada por Estado, Fechas, Persona Autorizada, Autorizante, Tipo, Motivo, Origen y Destino.
+- Tabla paginada (50 registros por página).
+- **Exportación a Excel** (.xlsx) de todos los registros filtrados.
 
 ### 🛠️ Administración de Porteros y Dependencias
 
