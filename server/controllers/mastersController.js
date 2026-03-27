@@ -34,9 +34,6 @@ exports.getLegajos = async (req, res) => {
         sql += ' ORDER BY apellido_nombre LIMIT ? OFFSET ?';
         params.push(pageSize, offset);
 
-        const fs = require('fs');
-        fs.appendFileSync('C:\\tmp\\legajos_debug.log', `[${new Date().toISOString()}] URL: ${req.url}\nQUERY: ${JSON.stringify(req.query)}\nSQL: ${sql}\nPARAMS: ${JSON.stringify(params)}\n\n`);
-
         const [rows] = await pool.query(sql, params);
         const [[{ total }]] = await pool.query(countSql, countParams);
 
