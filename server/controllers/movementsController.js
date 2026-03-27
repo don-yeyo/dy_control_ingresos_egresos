@@ -381,12 +381,14 @@ exports.getMisSolicitudes = async (req, res) => {
             // Sysadmin: acceso total a todos los movimientos
             whereClause = '1=1';
             whereParams = [];
-        } else if (esAutorizador) {
-            whereClause = '(m.usuario_app = ? OR m.personaAutorizante = ?)';
-            whereParams = [email, legajo];
+        } else if (esAutorizador || idRol >= 2) {
+            // Autorizante o RRHH: ve lo solicitado o lo que debe autorizar
+            whereClause = '(m.personaInterna = ? OR m.personaAutorizante = ?)';
+            whereParams = [legajo, legajo];
         } else {
-            whereClause = 'm.usuario_app = ?';
-            whereParams = [email];
+            // Solicitante estándar
+            whereClause = 'm.personaInterna = ?';
+            whereParams = [legajo];
         }
 
         // Filtro adicional por estado
