@@ -69,11 +69,12 @@ const MovementForm = () => {
                 // Verify current user legajo (priorizar el del contexto si existe, especialmente útil para MOCK)
                 if (legajoInfo) {
                     setMyLegajo(legajoInfo);
+                    const isPrivileged = legajoInfo.esAutorizador === 1 || legajoInfo.idRol >= 2;
                     setFormData(prev => ({
                         ...prev,
                         movement: {
                             ...prev.movement,
-                            personaInterna: legajoInfo.legajo
+                            personaInterna: isPrivileged ? '' : legajoInfo.legajo
                         }
                     }));
                     setIsVerifyingLegajo(false);
@@ -81,11 +82,12 @@ const MovementForm = () => {
                     try {
                         const meRes = await MastersService.getMe(currentUser.username || currentUser.email);
                         setMyLegajo(meRes.data);
+                        const isPrivileged = meRes.data.esAutorizador === 1 || meRes.data.idRol >= 2;
                         setFormData(prev => ({
                             ...prev,
                             movement: {
                                 ...prev.movement,
-                                personaInterna: meRes.data.legajo
+                                personaInterna: isPrivileged ? '' : meRes.data.legajo
                             }
                         }));
                     } catch (err) {
