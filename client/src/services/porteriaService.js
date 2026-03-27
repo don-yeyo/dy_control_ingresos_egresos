@@ -11,9 +11,9 @@ export const getPendientes = (email) =>
 export const completeMovimiento = (id, { email, horaCompletado, observacionPorteria, vigilador }) =>
     axios.put(`${API_URL}/porteria/${id}/complete`, { email, horaCompletado, observacionPorteria, vigilador });
 
-export const getHistorial = (email, { desde, hasta, estado, page } = {}) =>
+export const getHistorial = (email, { desde, hasta, estado, page, persona, autorizante, tipo, motivo, origen, destino } = {}) =>
     axios.get(`${API_URL}/porteria/historial`, {
-        params: { email, desde, hasta, estado, page },
+        params: { email, desde, hasta, estado, page, persona, autorizante, tipo, motivo, origen, destino },
     });
 
 export const getPorteros = () =>

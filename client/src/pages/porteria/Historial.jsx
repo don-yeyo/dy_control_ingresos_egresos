@@ -1,8 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '../../config/AuthContext';
-import { Download, Search, Edit2, Check as CheckIcon, X as XIcon } from 'lucide-react';
+import { Download, Search, Edit2, Check as CheckIcon, X as XIcon, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { getHistorial, updateTime } from '../../services/porteriaService';
+import { MastersService } from '../../services/api';
+import { Autocomplete, Select } from '../../components/FormElements';
 import './Historial.css';
 
 function nDaysAgo(n) {
@@ -82,8 +84,20 @@ function Historial({ porteria }) {
     const today = new Date().toISOString().slice(0, 10);
     const [desde, setDesde] = useState(nDaysAgo(3));
     const [hasta, setHasta] = useState(today);
-    const [estado, setEstado] = useState('todos'); // Últimos 3 días, todos los estados
+    const [estado, setEstado] = useState('todos');
+    const [persona, setPersona] = useState('');
+    const [autorizante, setAutorizante] = useState('');
+    const [tipo, setTipo] = useState('');
+    const [motivo, setMotivo] = useState('');
+    const [origen, setOrigen] = useState('');
+    const [destino, setDestino] = useState('');
     const [page, setPage] = useState(1);
+
+    const [legajos, setLegajos] = useState([]);
+    const [autorizadores, setAutorizadores] = useState([]);
+    const [lugares, setLugares] = useState([]);
+    const [tipos, setTipos] = useState([]);
+    const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -91,13 +105,34 @@ function Historial({ porteria }) {
     const [error, setError] = useState('');
     const [editing, setEditing] = useState(null); // { id: 1, time: '12:34' }
 
+    React.useEffect(() => {
+        const fetchMasters = async () => {
+            try {
+                const [lRes, lugRes, tRes] = await Promise.all([
+                    MastersService.getLegajos(1, '', 5000), // Traer todos los legajos para el historial (activos e inactivos)
+                    MastersService.getLugares(),
+                    MastersService.getMovementTypes()
+                ]);
+                const lArray = lRes.data.data || (Array.isArray(lRes.data) ? lRes.data : []);
+                setLegajos(lArray.map(item => ({ ...item })));
+                setAutorizadores(lArray.filter(i => i.esAutorizador === 1));
+
+                setLugares(lugRes.data.data || (Array.isArray(lugRes.data) ? lugRes.data : []));
+                setTipos(tRes.data.data || (Array.isArray(tRes.data) ? tRes.data : []));
+            } catch(e) {
+                console.error("Error al obtener tablas maestras para filtros locales:", e);
+            }
+        };
+        fetchMasters();
+    }, []);
+
     const fetchData = useCallback(async (p = 1) => {
         setLoading(true);
         setError('');
         // Para el filtro 'vencido_visual' pedimos estado pendiente al backend
         const estadoApi = estado === 'vencido_visual' ? '1' : estado;
         try {
-            const res = await getHistorial(email, { desde, hasta, estado: estadoApi, page: p });
+            const res = await getHistorial(email, { desde, hasta, estado: estadoApi, page: p, persona, autorizante, tipo, motivo, origen, destino });
             // Filtrado local de vencidos visuales
             if (estado === 'vencido_visual') {
                 res.data.movements = res.data.movements.filter(isVencidoVisual);
@@ -109,7 +144,14 @@ function Historial({ porteria }) {
         } finally {
             setLoading(false);
         }
-    }, [email, desde, hasta, estado]);
+    }, [email, desde, hasta, estado, persona, autorizante, tipo, motivo, origen, destino]);
+
+    React.useEffect(() => {
+        if (email) {
+            fetchData(1);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [email]);
 
     const handleSearch = () => fetchData(1);
 
@@ -135,7 +177,7 @@ function Historial({ porteria }) {
             const estadoApi = estado === 'vencido_visual' ? '1' : estado;
 
             do {
-                const res = await getHistorial(email, { desde, hasta, estado: estadoApi, page: p });
+                const res = await getHistorial(email, { desde, hasta, estado: estadoApi, page: p, persona, autorizante, tipo, motivo, origen, destino });
                 let pageMovs = res.data.movements;
 
                 // Filtrado local de vencidos visuales
@@ -184,29 +226,108 @@ function Historial({ porteria }) {
             </div>
 
             {/* Filtros */}
-            <div className="filtros-bar">
-                <div className="filtro-group">
-                    <label>Desde</label>
-                    <input type="date" value={desde} onChange={e => setDesde(e.target.value)} />
+            <div className="filtros-bar" style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1 }}>
+                        <div className="filtro-group">
+                            <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 500 }}>Desde</label>
+                            <input type="date" value={desde} onChange={e => setDesde(e.target.value)} style={{ minHeight: '46px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0 12px' }} />
+                        </div>
+                        <div className="filtro-group">
+                            <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 500 }}>Hasta</label>
+                            <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} style={{ minHeight: '46px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '0 12px' }} />
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                        <button className="btn-secondary" onClick={() => setShowAdvancedFilters(true)} style={{ padding: '0 20px', minHeight: '46px', fontSize: '1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                            <Filter size={18} /> Filtros Avanzados
+                        </button>
+                        <button className="btn-buscar" onClick={handleSearch} disabled={loading} style={{ padding: '0 24px', minHeight: '46px', fontSize: '1rem', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                            <Search size={18} />
+                            {loading ? 'Buscando...' : 'Buscar'}
+                        </button>
+                        <button className="btn-export" onClick={handleExport} disabled={exporting || !data || movements.length === 0} style={{ padding: '0 24px', minHeight: '46px', fontSize: '1rem', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
+                            <Download size={18} />
+                            {exporting ? 'Exportando...' : 'Excel'}
+                        </button>
+                    </div>
                 </div>
-                <div className="filtro-group">
-                    <label>Hasta</label>
-                    <input type="date" value={hasta} onChange={e => setHasta(e.target.value)} />
-                </div>
-                <div className="filtro-group">
-                    <label>Estado</label>
-                    <select value={estado} onChange={e => setEstado(e.target.value)}>
-                        {ESTADOS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-                    </select>
-                </div>
-                <button className="btn-buscar" onClick={handleSearch} disabled={loading}>
-                    <Search size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                    {loading ? 'Buscando...' : 'Buscar'}
-                </button>
-                <button className="btn-export" onClick={handleExport} disabled={exporting || !data || movements.length === 0}>
-                    <Download size={14} />
-                    {exporting ? 'Exportando...' : 'Exportar Excel'}
-                </button>
+
+                {showAdvancedFilters && (
+                    <div className="modal-overlay" onClick={() => setShowAdvancedFilters(false)}>
+                        <div className="modal-content glass card-anim" onClick={e => e.stopPropagation()} style={{ width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Filtros Avanzados</h2>
+                                <button onClick={() => setShowAdvancedFilters(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                                    <XIcon size={24} />
+                                </button>
+                            </div>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+                                <Select label="Estado del Movimiento" value={estado} onChange={e => setEstado(e.target.value)} name="estado" options={ESTADOS.map(e => ({ id: e.value, label: e.label }))} includePlaceholder={false} />
+                                <Autocomplete
+                                    label="Persona autorizada"
+                                    placeholder="Buscar nombre o DNI..."
+                                    value={persona}
+                                    onSelect={(opt) => setPersona(opt.id)}
+                                    options={legajos.map(l => ({ id: l.apellido_nombre, label: l.apellido_nombre }))}
+                                    allowFreeText={true}
+                                />
+                                <Autocomplete
+                                    label="Autorizante"
+                                    placeholder="Buscar..."
+                                    value={autorizante}
+                                    onSelect={(opt) => setAutorizante(opt.id)}
+                                    options={autorizadores.map(l => ({ id: l.apellido_nombre, label: l.apellido_nombre }))}
+                                    allowFreeText={true}
+                                />
+                                <Select
+                                    label="Tipo"
+                                    name="tipo"
+                                    value={tipo}
+                                    onChange={(e) => setTipo(e.target.value)}
+                                    options={tipos.map(t => ({ id: t.nombre, label: t.nombre }))}
+                                    includePlaceholder={true}
+                                />
+                                <Select
+                                    label="Motivo"
+                                    name="motivo"
+                                    value={motivo}
+                                    onChange={(e) => setMotivo(e.target.value)}
+                                    options={['Motivos personales', 'Requerimiento laboral', 'Accidente o razones médicas', 'Otros'].map(m => ({ id: m, label: m }))}
+                                    includePlaceholder={true}
+                                />
+                                <Select
+                                    label="Origen"
+                                    name="origen"
+                                    value={origen}
+                                    onChange={(e) => setOrigen(e.target.value)}
+                                    options={lugares.map(l => ({ id: l.nombre, label: l.nombre }))}
+                                    includePlaceholder={true}
+                                />
+                                <Select
+                                    label="Destino"
+                                    name="destino"
+                                    value={destino}
+                                    onChange={(e) => setDestino(e.target.value)}
+                                    options={lugares.map(l => ({ id: l.nombre, label: l.nombre }))}
+                                    includePlaceholder={true}
+                                />
+                            </div>
+
+                            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                <button className="btn-secondary" onClick={() => {
+                                    setEstado('todos'); setPersona(''); setAutorizante(''); setTipo(''); setMotivo(''); setOrigen(''); setDestino('');
+                                }} style={{ padding: '0 20px', minHeight: '40px', borderRadius: 'var(--radius)' }}>
+                                    Limpiar
+                                </button>
+                                <button className="btn-primary" onClick={() => { setShowAdvancedFilters(false); handleSearch(); }} style={{ padding: '0 20px', minHeight: '40px', borderRadius: 'var(--radius)' }}>
+                                    Aplicar y Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {error && <p style={{ color: 'var(--dy-red)', marginBottom: 16 }}>{error}</p>}

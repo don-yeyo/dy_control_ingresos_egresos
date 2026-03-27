@@ -263,7 +263,7 @@ exports.completeMovimiento = async (req, res) => {
 // @route GET /api/porteria/historial?email=&desde=&hasta=&estado=&page=
 // ---------------------------------------------------------------
 exports.getHistorial = async (req, res) => {
-    const { email, desde, hasta, estado, page = 1 } = req.query;
+    const { email, desde, hasta, estado, page = 1, persona, autorizante, tipo, motivo, origen, destino } = req.query;
     if (!email) return res.status(400).json({ error: 'Email requerido' });
 
     const pageSize = 50;
@@ -295,19 +295,51 @@ exports.getHistorial = async (req, res) => {
         if (desde) { whereExtra += ' AND DATE(m.fechaHoraRegistro) >= ?'; params.push(desde); }
         if (hasta) { whereExtra += ' AND DATE(m.fechaHoraRegistro) <= ?'; params.push(hasta); }
 
-        // Filtro por estado (default: solo completados)
         if (estado && estado !== 'todos') {
             whereExtra += ' AND m.idEstado = ?';
             params.push(parseInt(estado));
+        }
+        if (persona) {
+            whereExtra += ' AND (lp.apellido_nombre LIKE ? OR m.idPersonaExterna LIKE ?)';
+            params.push(`%${persona}%`, `%${persona}%`);
+        }
+        if (autorizante) {
+            whereExtra += ' AND le.apellido_nombre LIKE ?';
+            params.push(`%${autorizante}%`);
+        }
+        if (tipo) {
+            whereExtra += ' AND mt.nombre LIKE ?';
+            params.push(`%${tipo}%`);
+        }
+        if (motivo) {
+            whereExtra += ' AND m.motivo LIKE ?';
+            params.push(`%${motivo}%`);
+        }
+        if (origen) {
+            whereExtra += ' AND lo.nombre LIKE ?';
+            params.push(`%${origen}%`);
+        }
+        if (destino) {
+            whereExtra += ' AND ld.nombre LIKE ?';
+            params.push(`%${destino}%`);
         }
 
         const baseWhere = whereExtra;
         const baseParams = params;
 
+        const baseJoins = `
+             FROM movimientos m
+             JOIN movimientoTipos   mt ON m.idTipo    = mt.id
+             JOIN movimientoEstados me ON m.idEstado  = me.id
+             JOIN lugares           lo ON m.idLugarOrigen  = lo.id
+             JOIN lugares           ld ON m.idLugarDestino = ld.id
+             LEFT JOIN legajos      lp ON m.personaInterna    = lp.legajo
+             LEFT JOIN legajos      le ON m.personaAutorizante = le.legajo
+        `;
+
         const [[{ total }]] = await pool.query(
             `SELECT COUNT(*) as total
-             FROM movimientos m
-             JOIN movimientoTipos mt ON m.idTipo = mt.id
+             ${baseJoins}
              ${baseWhere}`,
             baseParams
         );
@@ -320,13 +352,7 @@ exports.getHistorial = async (req, res) => {
                     ld.nombre AS destino_nombre,
                     lp.apellido_nombre AS persona_interna_nombre,
                     le.apellido_nombre AS autorizante_nombre
-             FROM movimientos m
-             JOIN movimientoTipos   mt ON m.idTipo    = mt.id
-             JOIN movimientoEstados me ON m.idEstado  = me.id
-             JOIN lugares           lo ON m.idLugarOrigen  = lo.id
-             JOIN lugares           ld ON m.idLugarDestino = ld.id
-             LEFT JOIN legajos      lp ON m.personaInterna    = lp.legajo
-             LEFT JOIN legajos      le ON m.personaAutorizante = le.legajo
+             ${baseJoins}
              ${baseWhere}
              ORDER BY 
                 CASE WHEN m.idEstado = 1 AND DATE(m.fechaHoraRegistro) >= CURDATE() THEN 0 ELSE 1 END,

@@ -179,7 +179,7 @@ export const Select = ({ label, options = [], includePlaceholder = false, name, 
     );
 };
 
-export const Autocomplete = ({ label, options = [], onSelect, value = '', containerId, showAll = false, limit = 10, ...props }) => {
+export const Autocomplete = ({ label, options = [], onSelect, value = '', containerId, showAll = false, limit = 10, allowFreeText = false, ...props }) => {
     const [inputValue, setInputValue] = React.useState('');
     const [showOptions, setShowOptions] = React.useState(false);
     // Persistir preferencia en localStorage
@@ -197,17 +197,23 @@ export const Autocomplete = ({ label, options = [], onSelect, value = '', contai
 
     // Sincronizar con el valor externo (Legajo) para mostrar el Nombre correspondiente
     React.useEffect(() => {
-        if (!value) {
+        if (!value && !allowFreeText) {
             setInputValue('');
             selectedRef.current = null;
+            return;
+        }
+        if (allowFreeText && value && !options.find(o => String(o.id) === String(value))) {
+            setInputValue(value);
             return;
         }
         const opt = options.find(o => String(o.id) === String(value));
         if (opt) {
             setInputValue(opt.label);
             selectedRef.current = opt;
+        } else if (!allowFreeText) {
+            setInputValue('');
         }
-    }, [value, options]);
+    }, [value, options, allowFreeText]);
 
     const filteredOptions = options.filter(opt => {
         if (!inputValue) return true;
@@ -226,10 +232,12 @@ export const Autocomplete = ({ label, options = [], onSelect, value = '', contai
         setTimeout(() => {
             setShowOptions(false);
             const currentSelected = selectedRef.current;
-            if (!currentSelected || (currentSelected && currentSelected.label !== inputRef.current)) {
+            if (!allowFreeText && (!currentSelected || (currentSelected && currentSelected.label !== inputRef.current))) {
                 setInputValue('');
                 selectedRef.current = null;
                 onSelect({ id: '', label: '' });
+            } else if (allowFreeText && (!currentSelected || currentSelected.label !== inputRef.current)) {
+                onSelect({ id: inputRef.current, label: inputRef.current });
             }
         }, 250);
     };
