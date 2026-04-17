@@ -1,16 +1,4 @@
-Nuevo rol de usuario "rrhh"
-Nuevo rol de usario "sysadmin"
-
-Nuevo punto de menu solo para "rrhh" y "sysadmin" para gestionar la tabla legajos
-estos roles deberian ser por id el 2 y el 100 respectivamente ambos tambien deberian ser autorizantes
-es decir roles de id superior tiene tambien roles inferiores.
-Ejemplo: un usuario con rol 100 tiene tambien los roles 2 y 1.
-
-
-Autorizaciones recurrentes: cuando esta presente la marca de esRecurrente al crearse un movimiento, cuando ese registro pasa a estado completado se debe crear un nuevo movimiento con los mismos datos pero con fecha del dia siguiente. Contemplar los articulos y documentos con involucrados. Hay que clonarlo cambiando solo la fecha.
-Agregar el switch de esRecurrente en el formulario de autorizaciones solo para usuarios con rol de autorizante en adelante.
-
-
+Que no haga falta hacer login cada vez que se cierra y abre, que recuerde el token de azure
 
 Historial de movimientos: 
 - Buscar por tipo

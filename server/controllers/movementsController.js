@@ -198,47 +198,14 @@ exports.createMovement = async (req, res) => {
             const [[destinoInfo]] = await connection.query('SELECT esDependencia FROM lugares WHERE id = ?', [movement.idLugarDestino]);
             const ambosDependencias = origenInfo?.esDependencia === 1 && destinoInfo?.esDependencia === 1;
 
-            if (movement.conRegreso) {
-                // Caso A: con retorno → el SP genera los 4 registros del ciclo completo
-                console.log(`Invocando movimientos derivados (conRegreso) para ID: ${movementId}`);
+            if (movement.conRegreso || ambosDependencias) {
+                console.log(`Invocando movimientos derivados para ID: ${movementId} (conRegreso: ${!!movement.conRegreso}, inter-dep: ${ambosDependencias})`);
                 try {
                     await connection.query('CALL sp_GenerarMovimientosDerivados(?)', [movementId]);
                 } catch (spError) {
                     console.error('Error en Store Procedure sp_GenerarMovimientosDerivados:', spError);
                     throw new Error(`Error procesando movimientos derivados: ${spError.message}`);
                 }
-            } else if (ambosDependencias) {
-                // Caso B: sin retorno entre dos dependencias internas
-                // Generar manualmente el INGRESO en destino (orden 2), con origen/destino invertidos
-                console.log(`Generando INGRESO derivado (inter-dependencia sin retorno) para ID: ${movementId}`);
-
-                // Asignar idGrupo: usar el id del movimiento como grupo único
-                const nuevoGrupo = movementId;
-                await connection.query('UPDATE movimientos SET idGrupo = ? WHERE id = ?', [nuevoGrupo, movementId]);
-
-                await connection.query(
-                    `INSERT INTO movimientos
-                     (idGrupo, ordenGrupo, idTipo, personaInterna, idPersonaExterna, fechaHoraRegistro,
-                      conRegreso, motivo, personaAutorizante, observacion, idEstado,
-                      idLugarOrigen, idLugarDestino, destinoDetalle, usuario_app)
-                     VALUES (?, 2, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        nuevoGrupo,
-                        movement.idTipo === 1 ? 2 : 1,          // Egreso→Ingreso o Ingreso→Egreso
-                        movement.personaInterna || null,
-                        movement.idPersonaExterna || null,
-                        `${movement.fechaHoraRegistro} 00:00:00`,
-                        movement.motivo,
-                        personaAutorizanteLegajo,
-                        movement.observacion || '',
-                        1,                                       // Pendiente
-                        movement.idLugarOrigen,                 // Mantiene origen
-                        movement.idLugarDestino,                // Mantiene destino
-                        movement.destinoDetalle || '',
-                        movement.usuario_app
-                    ]
-                );
-                console.log(`INGRESO derivado generado en grupo ${nuevoGrupo}`);
             }
         }
 
@@ -551,8 +518,12 @@ exports.approveMovement = async (req, res) => {
             [ESTADO_PENDIENTE, id]
         );
 
-        // Si conRegreso, generar movimientos derivados (todos nacen en Pendiente)
-        if (mov.conRegreso) {
+        // Si corresponde, generar movimientos derivados (conRegreso o inter-dependencia)
+        const [[origenInfo]] = await connection.query('SELECT esDependencia FROM lugares WHERE id = ?', [mov.idLugarOrigen]);
+        const [[destinoInfo]] = await connection.query('SELECT esDependencia FROM lugares WHERE id = ?', [mov.idLugarDestino]);
+        const ambosDependencias = origenInfo?.esDependencia === 1 && destinoInfo?.esDependencia === 1;
+
+        if (mov.conRegreso || ambosDependencias) {
             try {
                 await connection.query('CALL sp_GenerarMovimientosDerivados(?)', [parseInt(id)]);
             } catch (spError) {
