@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { MastersService } from '../../services/api';
 import {
     Search, Plus, Edit2, Trash2, X, Check,
-    ShieldAlert, Star, User, ShieldCheck, AlertCircle
+    ShieldAlert, Star, User, ShieldCheck, AlertCircle,
+    ChevronUp, ChevronDown
 } from 'lucide-react';
 import { Button } from '../../components/Button';
 import Modal from '../../components/Modal';
@@ -14,9 +15,11 @@ const Legajos = () => {
     const [error, setError] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
 
-    // Pagination state
+    // Pagination & Sorting state
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
+    const [sortBy, setSortBy] = useState('apellido_nombre');
+    const [sortOrder, setSortOrder] = useState('ASC');
 
     // Modal state
     const [showModal, setShowModal] = useState(false);
@@ -39,15 +42,15 @@ const Legajos = () => {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            fetchLegajos(page, searchTerm);
+            fetchLegajos(page, searchTerm, sortBy, sortOrder);
         }, 300); // Pequeño debounce para no saturar al escribir
         return () => clearTimeout(timer);
-    }, [page, searchTerm]);
+    }, [page, searchTerm, sortBy, sortOrder]);
 
-    const fetchLegajos = async (p = 1, s = '') => {
+    const fetchLegajos = async (p = 1, s = '', sb = 'apellido_nombre', so = 'ASC') => {
         setLoading(true);
         try {
-            const res = await MastersService.getLegajos(p, s);
+            const res = await MastersService.getLegajos(p, s, null, false, sb, so);
             setLegajos(res.data.data);
             setPagination(res.data.pagination);
             setError(null);
@@ -151,6 +154,23 @@ const Legajos = () => {
         }
     };
 
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortOrder(sortOrder === 'ASC' ? 'DESC' : 'ASC');
+        } else {
+            setSortBy(column);
+            setSortOrder('ASC');
+        }
+        setPage(1); // Resetear a la primera página al cambiar el orden
+    };
+
+    const renderSortIcon = (column) => {
+        if (sortBy !== column) return <ChevronDown size={14} style={{ opacity: 0.3, marginLeft: '5px' }} />;
+        return sortOrder === 'ASC' ? 
+            <ChevronUp size={14} style={{ color: 'var(--dy-red)', marginLeft: '5px' }} /> : 
+            <ChevronDown size={14} style={{ color: 'var(--dy-red)', marginLeft: '5px' }} />;
+    };
+
     const getRoleInfo = (idRol) => {
         switch (idRol) {
             case 100: return { label: 'Sysadmin', color: '#ef4444', bgColor: '#fee2e2', icon: <ShieldAlert size={14} /> };
@@ -194,12 +214,36 @@ const Legajos = () => {
                 <table className="admin-table">
                     <thead>
                         <tr>
-                            <th>Legajo</th>
-                            <th>Apellido y Nombre</th>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th style={{ textAlign: 'center' }}>Autorizante</th>
-                            <th style={{ textAlign: 'center' }}>Estado</th>
+                            <th onClick={() => handleSort('legajo')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    Legajo {renderSortIcon('legajo')}
+                                </div>
+                            </th>
+                            <th onClick={() => handleSort('apellido_nombre')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    Apellido y Nombre {renderSortIcon('apellido_nombre')}
+                                </div>
+                            </th>
+                            <th onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    Email {renderSortIcon('email')}
+                                </div>
+                            </th>
+                            <th onClick={() => handleSort('idRol')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    Rol {renderSortIcon('idRol')}
+                                </div>
+                            </th>
+                            <th onClick={() => handleSort('esAutorizador')} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    Autorizante {renderSortIcon('esAutorizador')}
+                                </div>
+                            </th>
+                            <th onClick={() => handleSort('estado')} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    Estado {renderSortIcon('estado')}
+                                </div>
+                            </th>
                             <th style={{ textAlign: 'right' }}>Acciones</th>
                         </tr>
                     </thead>

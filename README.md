@@ -459,7 +459,7 @@ El sistema utiliza un esquema de roles jerárquicos definido por el campo `idRol
 | ID Rol | Nombre | Permisos |
 |---|---|---|
 | **1** | Usuario | Solicitante estándar. Puede crear solicitudes (estado Solicitado). |
-| **2** | RRHH | **Autorizante por defecto**. Acceso al módulo de **Gestión de Legajos** para administrar personal, roles y asignar estados (Activo/Inactivo). |
+| **2** | RRHH | **Autorizante por defecto**. Acceso al módulo de **Gestión de Legajos** para administrar personal, roles y asignar estados (Activo/Inactivo). Soporta búsqueda avanzada, paginado y ordenamiento interactivo por cualquier columna. |
 | **100** | Sysadmin | **Administrador total**. Incluye todos los permisos de RRHH y acceso técnico total. |
 
 #### Reglas de Jerarquía:

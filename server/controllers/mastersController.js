@@ -1,11 +1,24 @@
 const pool = require('../config/db');
 
-// @desc    Get all legajos (paginated)
-// @route   GET /api/masters/legajos?page=&search=
+// @desc    Get all legajos (paginated & sorted)
+// @route   GET /api/masters/legajos?page=&search=&sortBy=&sortOrder=
 exports.getLegajos = async (req, res) => {
-    const { page = 1, search = '', limit, activeOnly } = req.query;
+    const { 
+        page = 1, 
+        search = '', 
+        limit, 
+        activeOnly, 
+        sortBy = 'apellido_nombre', 
+        sortOrder = 'ASC' 
+    } = req.query;
+    
     const pageSize = limit ? parseInt(limit) : (parseInt(process.env.PAGE_SIZE_LEGAJOS) || 50);
     const offset = (Math.max(1, parseInt(page)) - 1) * pageSize;
+
+    // Sanitize and validate sort parameters to prevent SQL injection
+    const allowedSortColumns = ['legajo', 'apellido_nombre', 'email', 'idRol', 'esAutorizador', 'estado'];
+    const finalSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'apellido_nombre';
+    const finalSortOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'ASC';
 
     try {
         let sql = 'SELECT id, legajo, apellido_nombre, email, esAutorizador, idRol, estado FROM legajos';
@@ -31,7 +44,7 @@ exports.getLegajos = async (req, res) => {
             countSql += whereClause;
         }
 
-        sql += ' ORDER BY apellido_nombre LIMIT ? OFFSET ?';
+        sql += ` ORDER BY ${finalSortBy} ${finalSortOrder} LIMIT ? OFFSET ?`;
         params.push(pageSize, offset);
 
         const [rows] = await pool.query(sql, params);
