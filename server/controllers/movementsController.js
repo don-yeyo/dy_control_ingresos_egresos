@@ -680,14 +680,15 @@ exports.cancelMovement = async (req, res) => {
 
         const mov = movRows[0];
 
-        // Validar permisos con lógica condicional doble
+        // Validar permisos con lógica condicional
         if (mov.idEstado === ESTADO_PENDIENTE) {
-            // Caso Autorizador: estado Pendiente
-            if (!((currentUser.esAutorizador === 1 && mov.personaAutorizante === userLegajo) || currentUser.idRol >= 100)) {
-                return res.status(403).json({ error: 'No sos el autorizante asignado a este movimiento' });
+            // Caso Pendiente: Puede anular el autorizante asignado, el solicitante propietario del movimiento, o un administrador
+            if (!((currentUser.esAutorizador === 1 && mov.personaAutorizante === userLegajo) || mov.usuario_app === email || currentUser.idRol >= 100)) {
+                return res.status(403).json({ error: 'No tenés permisos para anular este movimiento' });
             }
         } else if (mov.idEstado === ESTADO_SOLICITADO) {
             // Caso Solicitante: estado Solicitado
+            // Puede anular si es el creador/solicitante de la solicitud o si es administrador
             if (!(mov.usuario_app === email || currentUser.idRol >= 100)) {
                 return res.status(403).json({ error: 'No tenés permisos para cancelar esta solicitud' });
             }

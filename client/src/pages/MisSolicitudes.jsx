@@ -98,7 +98,7 @@ const MovimientoCard = ({ mov, esAutorizador, currentUserEmail, onApprove, onRej
     const [expanded, setExpanded] = useState(false);
     const isPendingMyAuth = esAutorizador && mov.idEstado === ESTADO_SOLICITADO;
     const isPendingCancel = 
-        (esAutorizador && mov.idEstado === ESTADO_PENDIENTE) || 
+        (mov.idEstado === ESTADO_PENDIENTE && (esAutorizador || mov.usuario_app === currentUserEmail)) || 
         (mov.idEstado === ESTADO_SOLICITADO && mov.usuario_app === currentUserEmail);
     const vencida = esVencidaVisual(mov);
 

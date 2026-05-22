@@ -444,7 +444,7 @@ Esto crea:
 ### 4. Mis Solicitudes
 
 Accesible desde el menú lateral. Permite:
-- **Usuarios sin rol autorizador:** ver todas sus solicitudes y el estado de cada una. Pueden **anular** sus propias solicitudes creadas que se encuentren en estado **Solicitado** (esperando aprobación).
+- **Usuarios sin rol autorizador:** ver todas sus solicitudes y el estado de cada una. Pueden **anular** sus propias solicitudes creadas que se encuentren en estado **Solicitado** (esperando aprobación) o **Pendiente** (ya aprobadas pero no ejecutadas).
 - **Usuarios con rol autorizador:** ver sus propias solicitudes + las que requieren su aprobación, con notificación de las pendientes. Pueden **aprobar**, **rechazar** o **anular** directamente desde la tarjeta.
 - **Paginación:** El listado está paginado del lado del servidor. La cantidad de registros por página se configura con la variable de entorno `PAGE_SIZE_SOLICITUDES` (default: 20).
 - **Filtros server-side:** Se puede filtrar por estado. El filtrado se resuelve en el servidor para mayor eficiencia. Incluye filtro "Anulados".
@@ -457,6 +457,7 @@ Accesible desde el menú lateral. Permite:
 | **Solicitado** | Autorizante | Aprobar (pasa a Pendiente) · Rechazar (pasa a Rechazado) |
 | **Solicitado** | Solicitante propietario | Anular (pasa a Anulado) |
 | **Pendiente** | Autorizante | Anular (pasa a Anulado) |
+| **Pendiente** | Solicitante propietario | Anular (pasa a Anulado) |
 
 #### Estados de movimiento
 
