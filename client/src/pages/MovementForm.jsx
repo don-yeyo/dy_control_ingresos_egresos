@@ -23,6 +23,8 @@ const MovementForm = () => {
     const [myLegajo, setMyLegajo] = useState(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showSelfAuthWarning, setShowSelfAuthWarning] = useState(false);
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+    const [duplicateModalMessage, setDuplicateModalMessage] = useState('');
     const [isVerifyingLegajo, setIsVerifyingLegajo] = useState(true);
     const [isLoadingMasters, setIsLoadingMasters] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -370,6 +372,12 @@ const MovementForm = () => {
         } catch (error) {
             console.error('Error creating movement:', error);
             setIsSubmitting(false);
+
+            if (error.response?.status === 409 || error.response?.data?.error === 'DuplicateMovement') {
+                setDuplicateModalMessage(error.response?.data?.message || 'Ya existe una autorización activa para este autorizado en la misma fecha y hora. Por favor, anule la existente antes de generar una nueva.');
+                setShowDuplicateModal(true);
+                return;
+            }
 
             let errorMessage = error.message;
 
@@ -967,6 +975,26 @@ const MovementForm = () => {
                 confirmLabel="Confirmar y Continuar"
                 cancelLabel="Cancelar"
                 onConfirm={executeSubmit}
+            />
+
+            {/* Modal de error: Autorización Duplicada */}
+            <Modal
+                isOpen={showDuplicateModal}
+                onClose={() => setShowDuplicateModal(false)}
+                title="Autorización Duplicada"
+                type="error"
+                message={
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: 'var(--dy-red)' }}>
+                            <AlertTriangle size={32} />
+                            <strong style={{ fontSize: '1.2rem' }}>Existe una autorización activa</strong>
+                        </div>
+                        <p>{duplicateModalMessage}</p>
+                    </div>
+                }
+                confirmLabel="Entendido"
+                showCancel={false}
+                onConfirm={() => setShowDuplicateModal(false)}
             />
         </div>
     );

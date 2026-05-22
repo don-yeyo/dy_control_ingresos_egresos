@@ -105,6 +105,9 @@ QR_SECRET=tu_clave_secreta_para_qr_aqui
 
 # Zona horaria (para consistencia con Argentina)
 DB_TIMEZONE=-03:00
+
+# Validación de duplicados - Tolerancia en minutos para considerar una solicitud duplicada
+DUPLICATE_CHECK_TOLERANCE_MINUTES=15
 ```
 
 ### Frontend — `/client/.env`
@@ -151,6 +154,16 @@ El sistema permite habilitar o deshabilitar ciertas funciones mediante variables
 
 > [!NOTE]
 > Para máxima seguridad, estas flags también se pueden configurar en el backend (`server/.env` como `ENABLE_GOOGLE_LOGIN`, `ENABLE_DOCUMENTS` y `ENABLE_QR`) para asegurar que la API rechace peticiones no permitidas.
+
+---
+
+## 🚫 Lógica de Validación de Duplicados
+
+Para evitar la generación accidental de autorizaciones duplicadas en el sistema, se ha implementado un mecanismo de validación tanto en el backend como en el frontend:
+
+- **Criterio de Duplicidad:** Se considera duplicado si se intenta registrar una nueva solicitud para el mismo autorizado (persona interna o externa) en la misma fecha y hora que una solicitud activa existente (en estado `PENDIENTE` (1) o `SOLICITADO` (4)).
+- **Tolerancia configurable:** La comparación horaria se realiza utilizando una tolerancia de `N` minutos definida por la variable de entorno `DUPLICATE_CHECK_TOLERANCE_MINUTES` en el servidor (por defecto, 15 minutos).
+- **Flujo de Usuario:** Si el servidor detecta una solicitud duplicada, rechaza la operación con código `409 Conflict`. El frontend captura esta respuesta y muestra un popup interactivo de advertencia (Modal) con el ícono `AlertTriangle`, instruyendo al usuario a anular primero la autorización existente. Los datos cargados por el usuario no se pierden al cerrarse el modal.
 
 ---
 

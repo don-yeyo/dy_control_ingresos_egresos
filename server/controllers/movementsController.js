@@ -110,6 +110,42 @@ exports.createMovement = async (req, res) => {
             autorizanteEmail = authRows[0].email; // guardar para la notificación
         }
 
+        // 4.5. Validar autorización duplicada
+        const toleranceMinutes = parseInt(process.env.DUPLICATE_CHECK_TOLERANCE_MINUTES || '15', 10);
+        const [dupRows] = await connection.query(
+            `SELECT m.id, m.personaAutorizante, l.apellido_nombre AS autorizanteNombre 
+             FROM movimientos m
+             LEFT JOIN legajos l ON m.personaAutorizante = l.legajo
+             WHERE (
+                 (? IS NOT NULL AND m.personaInterna = ?) 
+                 OR (? IS NOT NULL AND m.idPersonaExterna = ?)
+             )
+             AND m.idEstado IN (?, ?)
+             AND DATE(m.fechaHoraRegistro) = ?
+             AND TIMESTAMPDIFF(
+                 MINUTE, 
+                 (SELECT a.fechaHora FROM auditoria a WHERE a.entidad = 'movimientos' AND a.idEntidad = m.id ORDER BY a.id DESC LIMIT 1), 
+                 NOW()
+             ) BETWEEN 0 AND ?`,
+            [
+                movement.personaInterna || null, movement.personaInterna || null,
+                movement.idPersonaExterna || null, movement.idPersonaExterna || null,
+                ESTADO_PENDIENTE, ESTADO_SOLICITADO,
+                movement.fechaHoraRegistro,
+                toleranceMinutes
+            ]
+        );
+
+        if (dupRows.length > 0) {
+            await connection.rollback();
+            await connection.release();
+            const autorizante = dupRows[0].autorizanteNombre || dupRows[0].personaAutorizante || 'el autorizante designado';
+            return res.status(409).json({
+                error: 'DuplicateMovement',
+                message: `Ya existe una autorización activa para este autorizado, con persona autorizante ${autorizante}, en la misma fecha y hora aproximada. Por favor, anule la existente antes de generar una nueva.`
+            });
+        }
+
         // 5. Insert Movement
         const [movResult] = await connection.query(
             `INSERT INTO movimientos 
