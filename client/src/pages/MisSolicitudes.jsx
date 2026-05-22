@@ -94,10 +94,12 @@ const GrupoBadge = ({ mov }) => {
     );
 };
 
-const MovimientoCard = ({ mov, esAutorizador, onApprove, onReject, onCancel, onShowQR }) => {
+const MovimientoCard = ({ mov, esAutorizador, currentUserEmail, onApprove, onReject, onCancel, onShowQR }) => {
     const [expanded, setExpanded] = useState(false);
     const isPendingMyAuth = esAutorizador && mov.idEstado === ESTADO_SOLICITADO;
-    const isPendingCancel = esAutorizador && mov.idEstado === ESTADO_PENDIENTE;
+    const isPendingCancel = 
+        (esAutorizador && mov.idEstado === ESTADO_PENDIENTE) || 
+        (mov.idEstado === ESTADO_SOLICITADO && mov.usuario_app === currentUserEmail);
     const vencida = esVencidaVisual(mov);
 
     // Extraer la fecha como string para evitar conversión UTC → local que resta un día
@@ -554,6 +556,7 @@ const MisSolicitudes = () => {
                                 key={mov.id}
                                 mov={mov}
                                 esAutorizador={data.esAutorizador}
+                                currentUserEmail={email}
                                 onApprove={(m) => setApproveModal({ open: true, mov: m })}
                                 onReject={(m) => setRejectModal({ open: true, mov: m, observacion: '' })}
                                 onCancel={(m) => setCancelModal({ open: true, mov: m, observacion: '' })}

@@ -666,10 +666,11 @@ exports.cancelMovement = async (req, res) => {
             'SELECT legajo, esAutorizador, idRol FROM legajos WHERE email = ?',
             [email]
         );
-        if (userRows.length === 0 || !userRows[0].esAutorizador) {
-            return res.status(403).json({ error: 'No tenés permisos de autorización' });
+        if (userRows.length === 0) {
+            return res.status(403).json({ error: 'Usuario no encontrado en el sistema' });
         }
-        const authLegajo = userRows[0].legajo;
+        const currentUser = userRows[0];
+        const userLegajo = currentUser.legajo;
 
         const [movRows] = await connection.query(
             'SELECT * FROM movimientos WHERE id = ?',
@@ -679,11 +680,19 @@ exports.cancelMovement = async (req, res) => {
 
         const mov = movRows[0];
 
-        if (mov.idEstado !== ESTADO_PENDIENTE) {
-            return res.status(400).json({ error: 'Solo se pueden anular movimientos en estado "Pendiente"' });
-        }
-        if (mov.personaAutorizante !== authLegajo && userRows[0].idRol < 100) {
-            return res.status(403).json({ error: 'No sos el autorizante asignado a este movimiento' });
+        // Validar permisos con lógica condicional doble
+        if (mov.idEstado === ESTADO_PENDIENTE) {
+            // Caso Autorizador: estado Pendiente
+            if (!((currentUser.esAutorizador === 1 && mov.personaAutorizante === userLegajo) || currentUser.idRol >= 100)) {
+                return res.status(403).json({ error: 'No sos el autorizante asignado a este movimiento' });
+            }
+        } else if (mov.idEstado === ESTADO_SOLICITADO) {
+            // Caso Solicitante: estado Solicitado
+            if (!(mov.usuario_app === email || currentUser.idRol >= 100)) {
+                return res.status(403).json({ error: 'No tenés permisos para cancelar esta solicitud' });
+            }
+        } else {
+            return res.status(400).json({ error: 'Solo se pueden anular movimientos en estado "Pendiente" o "Solicitado"' });
         }
 
         // sp_AnularGrupo anula toda la serie activa; articulos y documentos mantienen su estado propio
