@@ -18,31 +18,41 @@ export const Card = ({ children, className = '', style = {}, ...props }) => {
     );
 };
 
-export const Input = ({ label, containerId, ...props }) => {
+export const Input = ({ label, containerId, required, ...props }) => {
     return (
         <div id={containerId} style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {label && <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>{label}</label>}
+            {label && (
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                    {label} {required && <span style={{ color: 'var(--dy-red)', marginLeft: '4px' }}>*</span>}
+                </label>
+            )}
             <input
                 style={{ width: '100%', outline: 'none' }}
+                required={required}
                 {...props}
             />
         </div>
     );
 };
 
-export const Textarea = ({ label, ...props }) => {
+export const Textarea = ({ label, required, ...props }) => {
     return (
         <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {label && <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>{label}</label>}
+            {label && (
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                    {label} {required && <span style={{ color: 'var(--dy-red)', marginLeft: '4px' }}>*</span>}
+                </label>
+            )}
             <textarea
                 style={{ width: '100%', outline: 'none', minHeight: '100px', resize: 'vertical' }}
+                required={required}
                 {...props}
             />
         </div>
     );
 };
 
-export const Select = ({ label, options = [], includePlaceholder = false, name, value, onChange, containerId, ...props }) => {
+export const Select = ({ label, options = [], includePlaceholder = false, name, value, onChange, containerId, required, ...props }) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const containerRef = React.useRef(null);
 
@@ -71,7 +81,11 @@ export const Select = ({ label, options = [], includePlaceholder = false, name, 
 
     return (
         <div id={containerId} ref={containerRef} style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', opacity: props.disabled ? 0.6 : 1, zIndex: isOpen ? 2005 : 1 }}>
-            {label && <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500', display: 'block' }}>{label}</label>}
+            {label && (
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500', display: 'block' }}>
+                    {label} {required && <span style={{ color: 'var(--dy-red)', marginLeft: '4px' }}>*</span>}
+                </label>
+            )}
 
             <div
                 onClick={() => !props.disabled && setIsOpen(!isOpen)}
@@ -179,7 +193,7 @@ export const Select = ({ label, options = [], includePlaceholder = false, name, 
     );
 };
 
-export const Autocomplete = ({ label, options = [], onSelect, value = '', containerId, showAll = false, limit = 10, allowFreeText = false, ...props }) => {
+export const Autocomplete = ({ label, options = [], onSelect, value = '', containerId, showAll = false, limit = 10, allowFreeText = false, required, ...props }) => {
     const [inputValue, setInputValue] = React.useState('');
     const [showOptions, setShowOptions] = React.useState(false);
     // Persistir preferencia en localStorage
@@ -256,7 +270,11 @@ export const Autocomplete = ({ label, options = [], onSelect, value = '', contai
     return (
         <div id={containerId} style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: showOptions ? 1001 : 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                {label && <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>{label}</label>}
+                {label && (
+                    <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                        {label} {required && <span style={{ color: 'var(--dy-red)', marginLeft: '4px' }}>*</span>}
+                    </label>
+                )}
                 <label
                     onMouseDown={(e) => e.preventDefault()}
                     style={{
@@ -395,7 +413,7 @@ export const Switch = ({ label, name, checked, onChange, activeLabel = 'Activado
         </div>
     );
 };
-export const DatePicker = ({ label, value, onChange, name, min, max, containerId, ...props }) => {
+export const DatePicker = ({ label, value, onChange, name, min, max, containerId, required, ...props }) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const [viewDate, setViewDate] = React.useState(new Date(value || Date.now()));
     const containerRef = React.useRef(null);
@@ -453,7 +471,11 @@ export const DatePicker = ({ label, value, onChange, name, min, max, containerId
 
     return (
         <div id={containerId} ref={containerRef} style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', opacity: props.disabled ? 0.6 : 1, zIndex: isOpen ? 2100 : 1 }}>
-            {label && <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>{label}</label>}
+            {label && (
+                <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                    {label} {required && <span style={{ color: 'var(--dy-red)', marginLeft: '4px' }}>*</span>}
+                </label>
+            )}
 
             <div
                 onClick={() => !props.disabled && setIsOpen(!isOpen)}

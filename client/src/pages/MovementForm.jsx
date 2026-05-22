@@ -38,7 +38,7 @@ const MovementForm = () => {
         return localStorage.getItem(`movementForm_${key}`) || defaultValue;
     };
 
-    const dropdownKeys = ['idTipo', 'idLugarOrigen', 'idLugarDestino', 'motivo', 'personaAutorizante'];
+    const dropdownKeys = ['idTipo', 'idLugarOrigen', 'idLugarDestino', 'personaAutorizante'];
 
     const [formData, setFormData] = useState({
         movement: {
@@ -47,7 +47,7 @@ const MovementForm = () => {
             fechaHoraRegistro: new Date().toLocaleDateString('en-CA'), // Solo fecha para el input
             idLugarOrigen: getSavedValue('idLugarOrigen', ''),
             idLugarDestino: getSavedValue('idLugarDestino', ''),
-            motivo: getSavedValue('motivo', ''),
+            motivo: '',
             personaAutorizante: getSavedValue('personaAutorizante', ''),
             observacion: '',
             destinoDetalle: '',
@@ -141,11 +141,7 @@ const MovementForm = () => {
                     const newMov = { ...prev.movement };
                     let changed = false;
 
-                    // 1. Motivo
-                    if (!newMov.motivo) {
-                        newMov.motivo = 'Motivos personales';
-                        changed = true;
-                    }
+
 
                     // 2. Origen (según el tipo actual)
                     if (!newMov.idLugarOrigen && lug.data.length > 0) {
@@ -444,7 +440,7 @@ const MovementForm = () => {
                             onChange={handleMovChange}
                             options={['Motivos personales', 'Requerimiento laboral', 'Accidente o razones médicas', 'Otros']}
                             required
-                            includePlaceholder={false}
+                            includePlaceholder={true}
                             disabled={isSubmitting}
                         />
                     </div>
