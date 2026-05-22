@@ -56,10 +56,13 @@ const payload = {
     ]
 };
 
+require('dotenv').config({ path: './server/.env' });
+const PORT = process.env.PORT || 5001;
+
 async function testValidation() {
     try {
         console.log('Enviando payload de prueba al servidor...');
-        const response = await fetch('http://localhost:5000/api/movements', {
+        const response = await fetch(`http://localhost:${PORT}/api/movements`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

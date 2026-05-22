@@ -11,7 +11,7 @@ if (process.env.DB_TIMEZONE) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // rate-limit: Protección Anti-DOS (Máximo 1000 reqs / IP cada 15 min)
 const limiter = rateLimit({

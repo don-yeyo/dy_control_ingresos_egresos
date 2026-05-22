@@ -4,6 +4,17 @@ Sistema para la automatización y registro de movimientos de personal, artículo
 
 ---
 
+## 📚 Guía para Principiantes
+
+Si eres nuevo en el mundo del desarrollo o no eres desarrollador y quieres entender cómo funciona este proyecto y cómo empezar a colaborar, te recomendamos leer nuestra:
+
+👉 **[Guía para empezar en el mundo del desarrollo.md](./guia%20para%20empezar%20en%20el%20mundo%20del%20desarrollo.md)**
+
+En ella encontrarás explicaciones sencillas sobre las tecnologías utilizadas (React, Node, MySQL, Docker), cómo instalar herramientas de IA como Antigravity y los primeros pasos para correr el proyecto localmente.
+
+---
+
+
 ## 🚀 Arquitectura y Tecnologías
 
 El proyecto sigue una arquitectura **cliente/servidor desacoplada** para desarrollo local, preparado para **despliegue unificado en Netlify** mediante Serverless Functions.
@@ -78,7 +89,7 @@ DB_NAME=Acceso_A_Planta
 DB_PORT=3306
 
 # Servidor
-PORT=5000
+PORT=5001
 NODE_ENV=development
 
 # Paginación — registros por página en Mis Solicitudes (default: 20)
@@ -102,7 +113,7 @@ Basarse en `/client/.env.template`:
 
 ```env
 # URL del backend (desarrollo local)
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=http://localhost:5001/api
 
 # Puerto del cliente Vite (opcional, default: 5173)
 # Si lo cambiás, start-mobile.bat lo detectará automáticamente
@@ -118,6 +129,7 @@ VITE_SYNC_INTERVAL_SECONDS=60
 # Feature Flags (habilitar/deshabilitar funciones)
 VITE_ENABLE_GOOGLE_LOGIN=true
 VITE_ENABLE_DOCUMENTS=true
+VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS=true
 ```
 
 ---
@@ -129,6 +141,7 @@ El sistema permite habilitar o deshabilitar ciertas funciones mediante variables
 - `VITE_ENABLE_GOOGLE_LOGIN`: (true/false) Define si se muestra o no la opción de inicio de sesión con Google.
 - `VITE_ENABLE_DOCUMENTS`: (true/false) Define si los usuarios pueden adjuntar documentación (Remitos, Facturas, etc.) a sus solicitudes.
 - `VITE_ENABLE_QR`: (true/false) Habilita o deshabilita la generación y escaneo de códigos QR para autorizaciones.
+- `VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS`: (true/false) Permite mostrar u ocultar el campo "Tipo movimiento" en el formulario de solicitudes.
 - `VITE_MOCK_AUTH`: (true/false) **Modo Bypass**. Si es `true`, el sistema ignora el login real y entra como el usuario definido en `VITE_MOCK_AUTH_EMAIL`.
 - `VITE_MOCK_AUTH_EMAIL`: El email del usuario a simular (ej: `gabrielt@donyeyo.com.ar`). **Requerido** si `VITE_MOCK_AUTH=true`.
 - `VITE_ENABLE_VERSION_CHECK`: (true/false) Habilita o deshabilita el aviso de nueva versión contra el servidor. **Por defecto es false** para evitar bucles durante el desarrollo local.
@@ -232,7 +245,7 @@ npm run dev
 ```
 
 Esto levanta:
-- **Backend** en `http://localhost:5000`
+- **Backend** en `http://localhost:5001`
 - **Frontend** en `http://localhost:5173`
 
 ### Iniciar por separado
@@ -507,7 +520,7 @@ Desde la **raíz del proyecto**:
 | Script | Descripción |
 |---|---|
 | `npm run dev` | Inicia backend + frontend simultáneamente |
-| `npm run server` | Inicia solo el backend (puerto 5000) |
+| `npm run server` | Inicia solo el backend (puerto 5001) |
 | `npm run client` | Inicia solo el frontend (puerto 5173) |
 | `npm run install-all` | Instala dependencias en `/server` y `/client` |
 

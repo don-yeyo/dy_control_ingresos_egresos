@@ -424,16 +424,18 @@ const MovementForm = () => {
                     <h2 style={{ fontSize: '1.25rem', marginBottom: '20px' }}>Detalles del movimiento</h2>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                        <Select
-                            label="Tipo de movimiento"
-                            name="idTipo"
-                            containerId="field-tipo"
-                            value={String(formData.movement.idTipo)}
-                            onChange={handleMovChange}
-                            options={types && types.length > 0 ? types.map(t => ({ id: String(t.id), label: t.nombre })) : [{ id: '1', label: 'Egreso de personal' }]}
-                            disabled={true}
-                            required
-                        />
+                        {import.meta.env.VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS !== 'false' && (
+                            <Select
+                                label="Tipo de movimiento"
+                                name="idTipo"
+                                containerId="field-tipo"
+                                value={String(formData.movement.idTipo)}
+                                onChange={handleMovChange}
+                                options={types && types.length > 0 ? types.map(t => ({ id: String(t.id), label: t.nombre })) : [{ id: '1', label: 'Egreso de personal' }]}
+                                disabled={true}
+                                required
+                            />
+                        )}
                         <Select
                             label="Motivo"
                             name="motivo"
