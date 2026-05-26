@@ -36,6 +36,8 @@
 }
 
 .dark-theme {
+  --dy-red: #ff758f;
+  --error: #fb7185;
   --background: #0f172a;
   --surface: #1e293b;
   --surface-hover: #334155;

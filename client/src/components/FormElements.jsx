@@ -54,6 +54,7 @@ export const Textarea = ({ label, required, ...props }) => {
 
 export const Select = ({ label, options = [], includePlaceholder = false, name, value, onChange, containerId, required, ...props }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isFocused, setIsFocused] = React.useState(false);
     const containerRef = React.useRef(null);
 
     // Buscar label de la opción seleccionada
@@ -89,12 +90,27 @@ export const Select = ({ label, options = [], includePlaceholder = false, name, 
 
             <div
                 onClick={() => !props.disabled && setIsOpen(!isOpen)}
+                onFocus={() => !props.disabled && setIsFocused(true)}
+                onBlur={(e) => {
+                    if (!containerRef.current || !containerRef.current.contains(e.relatedTarget)) {
+                        setIsFocused(false);
+                    }
+                }}
+                onKeyDown={(e) => {
+                    if (props.disabled) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setIsOpen(!isOpen);
+                    }
+                }}
+                tabIndex={props.disabled ? -1 : 0}
                 style={{
                     width: '100%',
                     padding: '12px 16px',
                     minHeight: '46px',
                     backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
+                    border: isFocused ? '1px solid var(--primary)' : '1px solid var(--border)',
+                    outline: 'none',
                     borderRadius: 'var(--radius)',
                     color: value ? 'var(--text)' : 'var(--text-muted)',
                     cursor: props.disabled ? 'not-allowed' : 'pointer',
@@ -149,15 +165,25 @@ export const Select = ({ label, options = [], includePlaceholder = false, name, 
                     {includePlaceholder && (
                         <div
                             onClick={() => handleSelect('')}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleSelect('');
+                                }
+                            }}
                             style={{
                                 padding: '10px 16px',
                                 cursor: 'pointer',
                                 fontSize: '0.9rem',
                                 color: 'var(--text-muted)',
-                                transition: 'background 0.2s ease'
+                                transition: 'background 0.2s ease',
+                                outline: 'none'
                             }}
                             onMouseEnter={(e) => e.target.style.background = 'var(--surface-hover)'}
                             onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                            onFocus={(e) => e.target.style.background = 'var(--surface-hover)'}
+                            onBlur={(e) => e.target.style.background = 'transparent'}
                         >
                             -- Seleccione --
                         </div>
@@ -171,6 +197,13 @@ export const Select = ({ label, options = [], includePlaceholder = false, name, 
                             <div
                                 key={i}
                                 onClick={() => handleSelect(opt)}
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleSelect(opt);
+                                    }
+                                }}
                                 style={{
                                     padding: '10px 16px',
                                     cursor: 'pointer',
@@ -178,10 +211,13 @@ export const Select = ({ label, options = [], includePlaceholder = false, name, 
                                     color: isSelected ? 'var(--dy-red)' : 'var(--text)',
                                     fontWeight: isSelected ? '700' : '400',
                                     background: isSelected ? 'rgba(228, 5, 33, 0.05)' : 'transparent',
-                                    transition: 'all 0.2s ease'
+                                    transition: 'all 0.2s ease',
+                                    outline: 'none'
                                 }}
                                 onMouseEnter={(e) => e.target.style.background = isSelected ? 'rgba(228, 5, 33, 0.1)' : 'var(--surface-hover)'}
                                 onMouseLeave={(e) => e.target.style.background = isSelected ? 'rgba(228, 5, 33, 0.05)' : 'transparent'}
+                                onFocus={(e) => e.target.style.background = isSelected ? 'rgba(228, 5, 33, 0.1)' : 'var(--surface-hover)'}
+                                onBlur={(e) => e.target.style.background = isSelected ? 'rgba(228, 5, 33, 0.05)' : 'transparent'}
                             >
                                 {optLabel}
                             </div>
@@ -370,11 +406,23 @@ export const Autocomplete = ({ label, options = [], onSelect, value = '', contai
 };
 
 export const Switch = ({ label, name, checked, onChange, activeLabel = 'Activado', inactiveLabel = 'Desactivado', style, ...props }) => {
+    const [isFocused, setIsFocused] = React.useState(false);
+
     return (
         <div style={{ marginBottom: '16px', ...style, opacity: props.disabled ? 0.6 : 1 }}>
             {label && <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500', display: 'block', marginBottom: '8px' }}>{label}</label>}
             <div
                 onClick={() => !props.disabled && onChange({ target: { name, value: !checked, type: 'checkbox', checked: !checked } })}
+                onFocus={() => !props.disabled && setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                onKeyDown={(e) => {
+                    if (props.disabled) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onChange({ target: { name, value: !checked, type: 'checkbox', checked: !checked } });
+                    }
+                }}
+                tabIndex={props.disabled ? -1 : 0}
                 style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -382,7 +430,8 @@ export const Switch = ({ label, name, checked, onChange, activeLabel = 'Activado
                     cursor: props.disabled ? 'not-allowed' : 'pointer',
                     padding: '12px 16px',
                     backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
+                    border: isFocused ? '1px solid var(--primary)' : '1px solid var(--border)',
+                    outline: 'none',
                     borderRadius: 'var(--radius)',
                     transition: 'all 0.2s ease'
                 }}
@@ -415,6 +464,7 @@ export const Switch = ({ label, name, checked, onChange, activeLabel = 'Activado
 };
 export const DatePicker = ({ label, value, onChange, name, min, max, containerId, required, ...props }) => {
     const [isOpen, setIsOpen] = React.useState(false);
+    const [isFocused, setIsFocused] = React.useState(false);
     const [viewDate, setViewDate] = React.useState(new Date(value || Date.now()));
     const containerRef = React.useRef(null);
 
@@ -479,12 +529,27 @@ export const DatePicker = ({ label, value, onChange, name, min, max, containerId
 
             <div
                 onClick={() => !props.disabled && setIsOpen(!isOpen)}
+                onFocus={() => !props.disabled && setIsFocused(true)}
+                onBlur={(e) => {
+                    if (!containerRef.current || !containerRef.current.contains(e.relatedTarget)) {
+                        setIsFocused(false);
+                    }
+                }}
+                onKeyDown={(e) => {
+                    if (props.disabled) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setIsOpen(!isOpen);
+                    }
+                }}
+                tabIndex={props.disabled ? -1 : 0}
                 className="input-trigger"
                 style={{
                     width: '100%',
                     padding: '12px 16px',
                     backgroundColor: 'var(--surface)',
-                    border: '1px solid var(--border)',
+                    border: isFocused ? '1px solid var(--primary)' : '1px solid var(--border)',
+                    outline: 'none',
                     borderRadius: 'var(--radius)',
                     cursor: props.disabled ? 'not-allowed' : 'pointer',
                     display: 'flex',
@@ -540,6 +605,13 @@ export const DatePicker = ({ label, value, onChange, name, min, max, containerId
                                 <div
                                     key={i}
                                     onClick={() => !disabled && handleDateSelect(day)}
+                                    tabIndex={isOpen && !disabled ? 0 : -1}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            handleDateSelect(day);
+                                        }
+                                    }}
                                     style={{
                                         textAlign: 'center',
                                         padding: '8px 0',
@@ -550,10 +622,13 @@ export const DatePicker = ({ label, value, onChange, name, min, max, containerId
                                         color: isSelected ? '#ffffff' : (disabled ? 'var(--text-muted)' : 'var(--text)'),
                                         fontWeight: isSelected ? '700' : '500',
                                         transition: 'all 0.2s ease',
-                                        opacity: disabled ? 0.5 : 1
+                                        opacity: disabled ? 0.5 : 1,
+                                        outline: 'none'
                                     }}
                                     onMouseEnter={(e) => !disabled && !isSelected && (e.target.style.backgroundColor = 'var(--surface-hover)')}
                                     onMouseLeave={(e) => !disabled && !isSelected && (e.target.style.backgroundColor = 'transparent')}
+                                    onFocus={(e) => !disabled && !isSelected && (e.target.style.backgroundColor = 'var(--surface-hover)')}
+                                    onBlur={(e) => !disabled && !isSelected && (e.target.style.backgroundColor = 'transparent')}
                                 >
                                     {day}
                                 </div>

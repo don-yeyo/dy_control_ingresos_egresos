@@ -294,7 +294,7 @@ function Historial({ porteria }) {
                                     name="motivo"
                                     value={motivo}
                                     onChange={(e) => setMotivo(e.target.value)}
-                                    options={['Motivos personales', 'Requerimiento laboral', 'Accidente o razones médicas', 'Otros'].map(m => ({ id: m, label: m }))}
+                                    options={['Motivos personales', 'Requerimiento laboral', 'Urgencia'].map(m => ({ id: m, label: m }))}
                                     includePlaceholder={true}
                                 />
                                 <Select

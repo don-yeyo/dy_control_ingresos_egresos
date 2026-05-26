@@ -210,7 +210,9 @@ exports.getMe = async (req, res) => {
 // @route   GET /api/masters/motivos
 exports.getMotivos = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT id, nombre FROM motivos ORDER BY nombre');
+        const [rows] = await pool.query(
+            'SELECT id, nombre, tipo, esExteriores, orden FROM motivos ORDER BY CASE WHEN orden IS NULL THEN 1 ELSE 0 END, orden ASC, nombre ASC'
+        );
         res.json(rows);
     } catch (error) {
         console.error('Error in getMotivos:', error);

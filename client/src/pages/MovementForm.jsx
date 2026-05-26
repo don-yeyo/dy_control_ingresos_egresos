@@ -29,6 +29,8 @@ const MovementForm = () => {
     const [isVerifyingLegajo, setIsVerifyingLegajo] = useState(true);
     const [isLoadingMasters, setIsLoadingMasters] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [attemptedTipoClick, setAttemptedTipoClick] = useState(false);
+    const [attemptedMotivoClick, setAttemptedMotivoClick] = useState(false);
 
     const capitalizeName = (str) => {
         if (!str) return '';
@@ -41,15 +43,15 @@ const MovementForm = () => {
         return localStorage.getItem(`movementForm_${key}`) || defaultValue;
     };
 
-    const dropdownKeys = ['idTipo', 'idLugarOrigen', 'idLugarDestino', 'personaAutorizante'];
+    const dropdownKeys = ['idTipo', 'personaAutorizante'];
 
     const [formData, setFormData] = useState({
         movement: {
             idTipo: getSavedValue('idTipo', '1'),
             personaInterna: '', // Siempre vacío al cargar
             fechaHoraRegistro: new Date().toLocaleDateString('en-CA'), // Solo fecha para el input
-            idLugarOrigen: getSavedValue('idLugarOrigen', ''),
-            idLugarDestino: getSavedValue('idLugarDestino', ''),
+            idLugarOrigen: '', // Inicialmente vacío
+            idLugarDestino: '', // Inicialmente vacío
             motivo: '',
             idMotivo: '',
             personaAutorizante: getSavedValue('personaAutorizante', ''),
@@ -142,41 +144,7 @@ const MovementForm = () => {
                 setTypes(movementTypes);
                 setMotivos(motList.data);
 
-                // Asignar valores por defecto si están vacíos después de cargar los datos
-                setFormData(prev => {
-                    const newMov = { ...prev.movement };
-                    let changed = false;
 
-
-
-                    // 2. Origen (según el tipo actual)
-                    if (!newMov.idLugarOrigen && lug.data.length > 0) {
-                        const currentType = movementTypes.find(type => String(type.id) === String(newMov.idTipo));
-                        const validOrigen = lug.data.find(l => {
-                            if (currentType?.direccion === 'saliente' && l.nombre.toLowerCase() === 'exteriores') return false;
-                            return true;
-                        });
-                        if (validOrigen) {
-                            newMov.idLugarOrigen = String(validOrigen.id);
-                            changed = true;
-                        }
-                    }
-
-                    // 3. Destino (distinto al origen)
-                    if (!newMov.idLugarDestino && lug.data.length > 0) {
-                        const origin = newMov.idLugarOrigen;
-                        const validDest = lug.data.find(l => String(l.id) !== String(origin));
-                        if (validDest) {
-                            newMov.idLugarDestino = String(validDest.id);
-                            changed = true;
-                        }
-                    }
-
-                    if (changed) {
-                        return { ...prev, movement: newMov };
-                    }
-                    return prev;
-                });
             } catch (error) {
                 console.error('Error fetching masters:', error);
             } finally {
@@ -198,11 +166,49 @@ const MovementForm = () => {
                 nextMov.vencimientoRecurrencias = '';
             }
 
+            // Resetear la selección de Motivo cuando cambia el Destino o el Tipo (motivo)
+            if (name === 'idLugarDestino' || name === 'motivo') {
+                nextMov.idMotivo = '';
+                if (name === 'idLugarDestino') {
+                    if (val) {
+                        setAttemptedTipoClick(false);
+                        const selectedDest = lugares.find(l => String(l.id) === String(val));
+                        if (selectedDest) {
+                            if (selectedDest.esDependencia === 1) {
+                                // Autoseleccionar "Requerimiento laboral" si es dependencia
+                                nextMov.motivo = 'Requerimiento laboral';
+                                setAttemptedMotivoClick(false);
+                            } else {
+                                // Si no es dependencia (Exteriores), limpiar para obligar a seleccionar
+                                nextMov.motivo = '';
+                            }
+                        }
+                    } else {
+                        nextMov.motivo = '';
+                    }
+                }
+                if (name === 'motivo' && val) {
+                    setAttemptedMotivoClick(false);
+                }
+            }
+
             return {
                 ...prev,
                 movement: nextMov
             };
         });
+    };
+
+    const handleTipoClick = () => {
+        if (!formData.movement.idLugarDestino) {
+            setAttemptedTipoClick(true);
+        }
+    };
+
+    const handleMotivoClick = () => {
+        if (!formData.movement.motivo) {
+            setAttemptedMotivoClick(true);
+        }
     };
 
     const addArticle = () => {
@@ -404,6 +410,55 @@ const MovementForm = () => {
         }
     };
 
+    // Filtrar y ordenar motivos según el Lugar de destino y el Tipo de motivo
+    const getFilteredMotivos = () => {
+        if (!motivos || motivos.length === 0) return [];
+
+        let filtered = [...motivos];
+
+        // 1. Filtrar por Lugar de destino ("Exteriores")
+        const destinoLugar = lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino));
+        const isExteriores = destinoLugar?.nombre.toLowerCase() === 'exteriores';
+        if (isExteriores) {
+            filtered = filtered.filter(m => m.esExteriores === 1);
+        }
+
+        // 2. Filtrar por Tipo ("motivo")
+        if (formData.movement.motivo === 'Motivos personales') {
+            filtered = filtered.filter(m => m.tipo === 'Personal');
+        } else if (formData.movement.motivo === 'Requerimiento laboral') {
+            filtered = filtered.filter(m => m.tipo === 'Laboral');
+        } else if (formData.movement.motivo === 'Urgencia') {
+            filtered = filtered.filter(m => m.tipo === 'Urgencia');
+        }
+
+        // 3. Ordenar por "orden" asc (valores nulos al final) y luego por "nombre" asc
+        filtered.sort((a, b) => {
+            const valA = a.orden === null || a.orden === undefined ? Infinity : Number(a.orden);
+            const valB = b.orden === null || b.orden === undefined ? Infinity : Number(b.orden);
+            if (valA !== valB) return valA - valB;
+            return a.nombre.localeCompare(b.nombre);
+        });
+
+        return filtered;
+    };
+
+    const filteredMotivos = getFilteredMotivos();
+
+    // Obtener las opciones del campo "Tipo" según la dependencia del Lugar de destino
+    const getTipoOptions = () => {
+        const destinoLugar = lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino));
+        if (!destinoLugar) return [];
+
+        if (destinoLugar.esDependencia !== 1) {
+            return ['Motivos personales', 'Urgencia'];
+        } else {
+            return ['Requerimiento laboral'];
+        }
+    };
+
+    const tipoOptions = getTipoOptions();
+
     if (isVerifyingLegajo || isLoadingMasters) {
         return (
             <div className="full-screen-loader">
@@ -433,6 +488,40 @@ const MovementForm = () => {
                     <h2 style={{ fontSize: '1.25rem', marginBottom: '20px' }}>Detalles del movimiento</h2>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                        <Select
+                            label="Lugar de origen"
+                            name="idLugarOrigen"
+                            containerId="field-lugar-origen"
+                            value={formData.movement.idLugarOrigen}
+                            onChange={handleMovChange}
+                            options={lugares
+                                .filter(l => {
+                                    const currentType = types.find(t => String(t.id) === String(formData.movement.idTipo));
+                                    // Si es saliente, no mostrar Exteriores
+                                    if (currentType?.direccion === 'saliente' && l.nombre.toLowerCase() === 'exteriores') return false;
+                                    return true;
+                                })
+                                .map(l => ({ id: l.id, label: l.nombre }))}
+                            required
+                            includePlaceholder={true}
+                            disabled={isSubmitting}
+                        />
+                        <Select
+                            label="Lugar de destino"
+                            name="idLugarDestino"
+                            containerId="field-lugar-destino"
+                            value={formData.movement.idLugarDestino}
+                            onChange={handleMovChange}
+                            options={lugares
+                                .filter(l => String(l.id) !== String(formData.movement.idLugarOrigen)) // No puede ser igual al origen
+                                .map(l => ({ id: l.id, label: l.nombre }))}
+                            required
+                            includePlaceholder={true}
+                            disabled={isSubmitting}
+                        />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
                         {import.meta.env.VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS !== 'false' && (
                             <div style={{ gridColumn: '1 / -1' }}>
                                 <Select
@@ -447,33 +536,60 @@ const MovementForm = () => {
                                 />
                             </div>
                         )}
-                        <Select
-                            label="Tipo"
-                            name="motivo"
-                            containerId="field-motivo"
-                            value={formData.movement.motivo}
+                        <div onClick={handleTipoClick}>
+                            <Select
+                                label="Tipo"
+                                name="motivo"
+                                containerId="field-motivo"
+                                value={formData.movement.motivo}
+                                onChange={handleMovChange}
+                                options={tipoOptions}
+                                required
+                                includePlaceholder={true}
+                                disabled={!formData.movement.idLugarDestino || isSubmitting}
+                            />
+                            {attemptedTipoClick && !formData.movement.idLugarDestino && (
+                                <p style={{ color: 'var(--dy-red)', fontSize: '0.8rem', marginTop: '-4px', marginBottom: '8px' }}>
+                                    Seleccione primero Lugar de destino para habilitar este campo
+                                </p>
+                            )}
+                        </div>
+                        <div onClick={handleMotivoClick}>
+                            <Select
+                                label="Motivo"
+                                name="idMotivo"
+                                containerId="field-idMotivo"
+                                value={formData.movement.idMotivo}
+                                onChange={handleMovChange}
+                                options={filteredMotivos && filteredMotivos.length > 0 ? filteredMotivos.map(m => ({ id: String(m.id), label: m.nombre })) : []}
+                                required
+                                includePlaceholder={true}
+                                disabled={!formData.movement.motivo || isSubmitting}
+                            />
+                            {attemptedMotivoClick && !formData.movement.motivo && (
+                                <p style={{ color: 'var(--dy-red)', fontSize: '0.8rem', marginTop: '-4px', marginBottom: '8px' }}>
+                                    Seleccione primero Tipo para habilitar este campo
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '20px' }}>
+                        <Input
+                            label={`Detalle del destino ${lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino))?.esDependencia === 0 ? '' : '(opcional)'}`}
+                            name="destinoDetalle"
+                            containerId="field-destino-detalle"
+                            value={formData.movement.destinoDetalle}
                             onChange={handleMovChange}
-                            options={['Motivos personales', 'Requerimiento laboral', 'Accidente o razones médicas', 'Otros']}
-                            required
-                            includePlaceholder={true}
-                            disabled={isSubmitting}
-                        />
-                        <Select
-                            label="Motivo"
-                            name="idMotivo"
-                            containerId="field-idMotivo"
-                            value={formData.movement.idMotivo}
-                            onChange={handleMovChange}
-                            options={motivos && motivos.length > 0 ? motivos.map(m => ({ id: String(m.id), label: m.nombre })) : []}
-                            required
-                            includePlaceholder={true}
+                            maxLength={50}
+                            required={lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino))?.esDependencia === 0}
                             disabled={isSubmitting}
                         />
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '20px' }}>
                         <Switch
-                            label="Retorno"
+                            label="Retorno durante la jornada"
                             name="conRegreso"
                             checked={formData.movement.conRegreso}
                             onChange={handleMovChange}
@@ -529,51 +645,7 @@ const MovementForm = () => {
                                 </p>
                             </div>
                         </div>
-                    )}
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
-                        <Select
-                            label="Lugar de origen"
-                            name="idLugarOrigen"
-                            containerId="field-lugar-origen"
-                            value={formData.movement.idLugarOrigen}
-                            onChange={handleMovChange}
-                            options={lugares
-                                .filter(l => {
-                                    const currentType = types.find(t => String(t.id) === String(formData.movement.idTipo));
-                                    // Si es saliente, no mostrar Exteriores
-                                    if (currentType?.direccion === 'saliente' && l.nombre.toLowerCase() === 'exteriores') return false;
-                                    return true;
-                                })
-                                .map(l => ({ id: l.id, label: l.nombre }))}
-                            required
-                            includePlaceholder={false}
-                            disabled={isSubmitting}
-                        />
-                        <Select
-                            label="Lugar de destino"
-                            name="idLugarDestino"
-                            containerId="field-lugar-destino"
-                            value={formData.movement.idLugarDestino}
-                            onChange={handleMovChange}
-                            options={lugares
-                                .filter(l => String(l.id) !== String(formData.movement.idLugarOrigen)) // No puede ser igual al origen
-                                .map(l => ({ id: l.id, label: l.nombre }))}
-                            required
-                            includePlaceholder={false}
-                            disabled={isSubmitting}
-                        />
-                        <Input
-                            label={`Detalle del destino ${lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino))?.esDependencia === 0 ? '' : '(opcional)'}`}
-                            name="destinoDetalle"
-                            containerId="field-destino-detalle"
-                            value={formData.movement.destinoDetalle}
-                            onChange={handleMovChange}
-                            maxLength={50}
-                            required={lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino))?.esDependencia === 0}
-                            disabled={isSubmitting}
-                        />
-                    </div>
+                    ) }
 
                     <div style={{ position: 'relative', zIndex: '1000', marginTop: '20px' }} id="field-persona-interna">
                         {!userIsAutorizador ? (
