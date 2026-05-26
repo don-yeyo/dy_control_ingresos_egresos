@@ -596,6 +596,7 @@ const MovementForm = () => {
                             activeLabel="Con retorno al origen - F1"
                             inactiveLabel="Sin retorno al origen - F2"
                             disabled={isSubmitting}
+                            tooltip="Marque con retorno si considera o requiere que deba volver al lugar de origen durante la misma jornada laboral"
                         />
                         <DatePicker
                             label="Fecha autorizada"
@@ -839,6 +840,7 @@ const MovementForm = () => {
                                     disabled={isSubmitting}
                                 />
                                 <Switch
+                                    label="Retorno"
                                     name="conRetorno"
                                     checked={art.conRetorno !== false}
                                     onChange={(e) => handleArticleChange(index, e)}
@@ -846,6 +848,7 @@ const MovementForm = () => {
                                     inactiveLabel="Sin Retorno"
                                     style={{ marginBottom: '16px' }}
                                     disabled={isSubmitting}
+                                    tooltip="Marque con retorno si considera o requiere que el artículo deba volver al lugar de origen durante o posterior a la jornada laboral"
                                 />
                             </div>
                         </div>

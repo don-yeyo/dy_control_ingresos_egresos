@@ -405,12 +405,107 @@ export const Autocomplete = ({ label, options = [], onSelect, value = '', contai
     );
 };
 
-export const Switch = ({ label, name, checked, onChange, activeLabel = 'Activado', inactiveLabel = 'Desactivado', style, ...props }) => {
+export const Switch = ({ label, name, checked, onChange, activeLabel = 'Activado', inactiveLabel = 'Desactivado', style, tooltip, ...props }) => {
     const [isFocused, setIsFocused] = React.useState(false);
+    const [showTooltip, setShowTooltip] = React.useState(false);
+    const tooltipRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (!showTooltip) return;
+        const handleOutsideClick = (e) => {
+            if (tooltipRef.current && !tooltipRef.current.contains(e.target)) {
+                setShowTooltip(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
+    }, [showTooltip]);
 
     return (
         <div style={{ marginBottom: '16px', ...style, opacity: props.disabled ? 0.6 : 1 }}>
-            {label && <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500', display: 'block', marginBottom: '8px' }}>{label}</label>}
+            {label && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                    <label style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: '500' }}>
+                        {label}
+                    </label>
+                    {tooltip && (
+                        <div ref={tooltipRef} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowTooltip(!showTooltip);
+                                }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    padding: 0,
+                                    cursor: 'pointer',
+                                    color: 'var(--text-muted)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '50%',
+                                    transition: 'color 0.2s',
+                                    width: '16px',
+                                    height: '16px'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 16v-4" />
+                                    <path d="M12 8h.01" />
+                                </svg>
+                            </button>
+                            {showTooltip && (
+                                <div
+                                    className="glass card-anim"
+                                    style={{
+                                        position: 'absolute',
+                                        bottom: 'calc(100% + 8px)',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        width: '240px',
+                                        padding: '10px 14px',
+                                        backgroundColor: 'var(--surface)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+                                        fontSize: '0.8rem',
+                                        color: 'var(--text)',
+                                        fontWeight: '400',
+                                        zIndex: 100,
+                                        lineHeight: '1.4',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    {tooltip}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        borderWidth: '6px',
+                                        borderStyle: 'solid',
+                                        borderColor: 'var(--border) transparent transparent transparent'
+                                    }} />
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 'calc(100% - 1px)',
+                                        left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        borderWidth: '5px',
+                                        borderStyle: 'solid',
+                                        borderColor: 'var(--surface) transparent transparent transparent'
+                                    }} />
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
             <div
                 onClick={() => !props.disabled && onChange({ target: { name, value: !checked, type: 'checkbox', checked: !checked } })}
                 onFocus={() => !props.disabled && setIsFocused(true)}
