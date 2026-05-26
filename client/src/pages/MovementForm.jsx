@@ -20,6 +20,7 @@ const MovementForm = () => {
     const [autorizadores, setAutorizadores] = useState([]); // solo los que tienen esAutorizador=1
     const [lugares, setLugares] = useState([]);
     const [types, setTypes] = useState([]);
+    const [motivos, setMotivos] = useState([]);
     const [myLegajo, setMyLegajo] = useState(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showSelfAuthWarning, setShowSelfAuthWarning] = useState(false);
@@ -50,6 +51,7 @@ const MovementForm = () => {
             idLugarOrigen: getSavedValue('idLugarOrigen', ''),
             idLugarDestino: getSavedValue('idLugarDestino', ''),
             motivo: '',
+            idMotivo: '',
             personaAutorizante: getSavedValue('personaAutorizante', ''),
             observacion: '',
             destinoDetalle: '',
@@ -112,10 +114,11 @@ const MovementForm = () => {
                     setIsVerifyingLegajo(false);
                 }
 
-                const [l, lug, t] = await Promise.all([
+                const [l, lug, t, motList] = await Promise.all([
                     MastersService.getLegajos(1, '', 5000, true), // Traer solo legajos activos para el formulario
                     MastersService.getLugares(),
-                    MastersService.getMovementTypes()
+                    MastersService.getMovementTypes(),
+                    MastersService.getMotivos()
                 ]);
 
                 // Normalizar nombres de legajos (Capitalize)
@@ -137,6 +140,7 @@ const MovementForm = () => {
                 setLugares(lug.data);
                 const movementTypes = t.data;
                 setTypes(movementTypes);
+                setMotivos(motList.data);
 
                 // Asignar valores por defecto si están vacíos después de cargar los datos
                 setFormData(prev => {
@@ -276,6 +280,7 @@ const MovementForm = () => {
 
         if (!formData.movement.idTipo) errors.push('field-tipo');
         if (!formData.movement.motivo) errors.push('field-motivo');
+        if (!formData.movement.idMotivo) errors.push('field-idMotivo');
         if (!formData.movement.fechaHoraRegistro) errors.push('field-fecha');
         if (!formData.movement.personaInterna) errors.push('field-persona-interna');
 
@@ -429,24 +434,37 @@ const MovementForm = () => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                         {import.meta.env.VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS !== 'false' && (
-                            <Select
-                                label="Tipo de movimiento"
-                                name="idTipo"
-                                containerId="field-tipo"
-                                value={String(formData.movement.idTipo)}
-                                onChange={handleMovChange}
-                                options={types && types.length > 0 ? types.map(t => ({ id: String(t.id), label: t.nombre })) : [{ id: '1', label: 'Egreso de personal' }]}
-                                disabled={true}
-                                required
-                            />
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <Select
+                                    label="Sentido / Dirección"
+                                    name="idTipo"
+                                    containerId="field-tipo"
+                                    value={String(formData.movement.idTipo)}
+                                    onChange={handleMovChange}
+                                    options={types && types.length > 0 ? types.map(t => ({ id: String(t.id), label: t.nombre })) : [{ id: '1', label: 'Egreso de personal' }]}
+                                    disabled={true}
+                                    required
+                                />
+                            </div>
                         )}
                         <Select
-                            label="Motivo"
+                            label="Tipo"
                             name="motivo"
                             containerId="field-motivo"
                             value={formData.movement.motivo}
                             onChange={handleMovChange}
                             options={['Motivos personales', 'Requerimiento laboral', 'Accidente o razones médicas', 'Otros']}
+                            required
+                            includePlaceholder={true}
+                            disabled={isSubmitting}
+                        />
+                        <Select
+                            label="Motivo"
+                            name="idMotivo"
+                            containerId="field-idMotivo"
+                            value={formData.movement.idMotivo}
+                            onChange={handleMovChange}
+                            options={motivos && motivos.length > 0 ? motivos.map(m => ({ id: String(m.id), label: m.nombre })) : []}
                             required
                             includePlaceholder={true}
                             disabled={isSubmitting}

@@ -597,15 +597,16 @@ async function handleRecurrence(connection, movId) {
         // 3. Clonar movimiento base (Se clona como PENDIENTE para el día siguiente)
         const [result] = await connection.query(
             `INSERT INTO movimientos 
-            (idGrupo, ordenGrupo, idTipo, personaInterna, idPersonaExterna, fechaHoraRegistro, conRegreso, motivo, personaAutorizante, observacion, idEstado, idLugarOrigen, idLugarDestino, destinoDetalle, usuario_app, esRecurrente, vencimientoRecurrencias) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (idGrupo, ordenGrupo, idTipo, personaInterna, idPersonaExterna, fechaHoraRegistro, conRegreso, motivo, personaAutorizante, observacion, idEstado, idLugarOrigen, idLugarDestino, destinoDetalle, usuario_app, esRecurrente, vencimientoRecurrencias, idMotivo) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 0, 1, 
                 mov.idTipo, mov.personaInterna, mov.idPersonaExterna, nextDateStr, mov.conRegreso, mov.motivo, mov.personaAutorizante, 
                 mov.observacion ? `[RECURRENTE] ${mov.observacion}` : '[RECURRENTE]', 
                 1, // ESTADO_PENDIENTE (ya autorizada)
                 mov.idLugarOrigen, mov.idLugarDestino, mov.destinoDetalle, mov.usuario_app, 1,
-                mov.vencimientoRecurrencias || null
+                mov.vencimientoRecurrencias || null,
+                mov.idMotivo || null
             ]
         );
         const newId = result.insertId;

@@ -206,4 +206,16 @@ exports.getMe = async (req, res) => {
     }
 };
 
+// @desc    Get all motivos
+// @route   GET /api/masters/motivos
+exports.getMotivos = async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT id, nombre FROM motivos ORDER BY nombre');
+        res.json(rows);
+    } catch (error) {
+        console.error('Error in getMotivos:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 

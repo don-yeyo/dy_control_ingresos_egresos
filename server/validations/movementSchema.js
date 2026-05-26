@@ -40,6 +40,7 @@ const movementSchema = z.object({
         motivo: z.string().min(1, 'El motivo es obligatorio').refine(val => val.toLowerCase() !== '-- seleccione --', {
             message: 'Debe seleccionar un motivo válido'
         }),
+        idMotivo: z.coerce.number({ required_error: 'El motivo es obligatorio' }),
         personaAutorizante: z.string().optional().nullable(),
         observacion: z.string().max(500, 'La observación no puede superar los 500 caracteres').optional().nullable(),
         destinoDetalle: z.string().max(50, 'El detalle del destino no puede superar los 50 caracteres').optional().nullable(),

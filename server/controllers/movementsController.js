@@ -149,8 +149,8 @@ exports.createMovement = async (req, res) => {
         // 5. Insert Movement
         const [movResult] = await connection.query(
             `INSERT INTO movimientos 
-            (idGrupo, ordenGrupo, idTipo, personaInterna, idPersonaExterna, fechaHoraRegistro, conRegreso, motivo, personaAutorizante, observacion, idEstado, idLugarOrigen, idLugarDestino, destinoDetalle, usuario_app, esRecurrente, vencimientoRecurrencias) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (idGrupo, ordenGrupo, idTipo, personaInterna, idPersonaExterna, fechaHoraRegistro, conRegreso, motivo, personaAutorizante, observacion, idEstado, idLugarOrigen, idLugarDestino, destinoDetalle, usuario_app, esRecurrente, vencimientoRecurrencias, idMotivo) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 0, 1,
                 movement.idTipo,
@@ -167,7 +167,8 @@ exports.createMovement = async (req, res) => {
                 movement.destinoDetalle || '',
                 movement.usuario_app,
                 movement.esRecurrente ? 1 : 0,
-                movement.vencimientoRecurrencias || null
+                movement.vencimientoRecurrencias || null,
+                movement.idMotivo || null
             ]
         );
 

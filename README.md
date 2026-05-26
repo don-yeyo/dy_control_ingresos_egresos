@@ -603,6 +603,16 @@ Para que un usuario pueda acceder al módulo de portería y ver los movimientos 
     
     **Lógica de visibilidad**: Un movimiento aparecerá en la pantalla del portero si el **Origen** O el **Destino** coinciden con alguno de sus lugares asignados.
 
+### 📋 Estructuración de Motivos y Campos Dinámicos
+
+Se ha integrado el maestro de motivos desde la base de datos para brindar una categorización rigurosa de las solicitudes de ingreso/egreso:
+1. **Tabla `motivos`**: Almacena las categorías maestras administradas por el sistema (`id`, `nombre`).
+2. **Campo `idMotivo` (Tabla `movimientos`)**: Permite vincular de forma persistente e integrada el motivo seleccionado con el registro del movimiento.
+3. **Re-Diseño Dinámico e Interfaz Re-etiquetada**:
+   - El campo "Tipo movimiento" se expone visualmente como **"Sentido / Dirección"** (internamente mantiene su enlace a `idTipo`). Si está activo (`VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS=true`), se ubica ocupando el **100% del ancho** del formulario en una sola línea.
+   - El campo "Motivo" se expone como **"Tipo"** (internamente mantiene su enlace a `motivo`). Se ubica al **50% del ancho** en la misma fila que el nuevo desplegable **"Motivo"** (enlace a `idMotivo`).
+   - El nuevo selector dinámico **"Motivo"** se inicializa sin selección (`-- Seleccione --`) y se carga asíncronamente desde la base de datos (`GET /api/masters/motivos`), forzando una selección activa del usuario.
+
 ---
 
 ## 🔒 Seguridad

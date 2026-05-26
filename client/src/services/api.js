@@ -12,6 +12,7 @@ export const MastersService = {
     getMovementStates: () => api.get('/masters/movement-states'),
     getMe: (email) => api.get(`/masters/me?email=${email}`),
     getPorteros: () => api.get('/masters/porteros'),
+    getMotivos: () => api.get('/masters/motivos'),
     updateLegajo: (id, data) => api.put(`/masters/legajos/${id}`, data),
     createLegajo: (data) => api.post('/masters/legajos', data),
     deleteLegajo: (id) => api.delete(`/masters/legajos/${id}`),
