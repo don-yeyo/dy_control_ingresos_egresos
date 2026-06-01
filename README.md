@@ -611,6 +611,11 @@ Se ha integrado el maestro de motivos desde la base de datos para brindar una ca
 3. **Re-Diseño Dinámico e Interfaz Re-etiquetada**:
    - El campo "Tipo movimiento" se expone visualmente como **"Sentido / Dirección"** (internamente mantiene su enlace a `idTipo`). Si está activo (`VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS=true`), se ubica ocupando el **100% del ancho** del formulario en una sola línea.
    - El campo "Motivo" se expone como **"Tipo"** (internamente mantiene su enlace a `motivo`). Se ubica al **50% del ancho** en la misma fila que el nuevo desplegable **"Motivo"** (enlace a `idMotivo`).
+   - **Lógica de opciones y preselección automática en "Tipo"**:
+     - Se removió la opción `"Urgencia"` del campo.
+     - Si el **Lugar de destino** es `"Exteriores"`, se incluye de forma dinámica la opción `"Requerimiento laboral"` junto a `"Motivos personales"`.
+     - Si por el filtrado del destino, el campo **Tipo** cuenta con **una única opción disponible** (por ejemplo, dependencias con solo `"Requerimiento laboral"`, u otros destinos externos con solo `"Motivos personales"`), el sistema la **preselecciona automáticamente**.
+     - Si el **Lugar de destino** es una **dependencia**, se filtran y **excluyen** automáticamente los motivos marcados como `esExteriores` en la base de datos para evitar selecciones incorrectas.
    - El nuevo selector dinámico **"Motivo"** se inicializa sin selección (`-- Seleccione --`) y se carga asíncronamente desde la base de datos (`GET /api/masters/motivos`), forzando una selección activa del usuario.
 
 ---

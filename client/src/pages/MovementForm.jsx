@@ -154,6 +154,21 @@ const MovementForm = () => {
         fetchData();
     }, []);
 
+    const getTipoOptionsForDestino = (destinoId) => {
+        const destinoLugar = lugares.find(l => String(l.id) === String(destinoId));
+        if (!destinoLugar) return [];
+
+        if (destinoLugar.esDependencia !== 1) {
+            const options = ['Motivos personales'];
+            if (destinoLugar.nombre.toLowerCase() === 'exteriores') {
+                options.push('Requerimiento laboral');
+            }
+            return options;
+        } else {
+            return ['Requerimiento laboral'];
+        }
+    };
+
     const handleMovChange = (e) => {
         const { name, value, type, checked } = e.target;
         const val = type === 'checkbox' ? checked : value;
@@ -172,16 +187,13 @@ const MovementForm = () => {
                 if (name === 'idLugarDestino') {
                     if (val) {
                         setAttemptedTipoClick(false);
-                        const selectedDest = lugares.find(l => String(l.id) === String(val));
-                        if (selectedDest) {
-                            if (selectedDest.esDependencia === 1) {
-                                // Autoseleccionar "Requerimiento laboral" si es dependencia
-                                nextMov.motivo = 'Requerimiento laboral';
-                                setAttemptedMotivoClick(false);
-                            } else {
-                                // Si no es dependencia (Exteriores), limpiar para obligar a seleccionar
-                                nextMov.motivo = '';
-                            }
+                        const opts = getTipoOptionsForDestino(val);
+                        if (opts.length === 1) {
+                            // Autoseleccionar "Tipo" si hay una única opción disponible
+                            nextMov.motivo = opts[0];
+                            setAttemptedMotivoClick(false);
+                        } else {
+                            nextMov.motivo = '';
                         }
                     } else {
                         nextMov.motivo = '';
@@ -416,11 +428,13 @@ const MovementForm = () => {
 
         let filtered = [...motivos];
 
-        // 1. Filtrar por Lugar de destino ("Exteriores")
+        // 1. Filtrar por Lugar de destino ("Exteriores" o Dependencia)
         const destinoLugar = lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino));
         const isExteriores = destinoLugar?.nombre.toLowerCase() === 'exteriores';
         if (isExteriores) {
             filtered = filtered.filter(m => m.esExteriores === 1);
+        } else if (destinoLugar?.esDependencia === 1) {
+            filtered = filtered.filter(m => m.esExteriores !== 1);
         }
 
         // 2. Filtrar por Tipo ("motivo")
@@ -447,14 +461,7 @@ const MovementForm = () => {
 
     // Obtener las opciones del campo "Tipo" según la dependencia del Lugar de destino
     const getTipoOptions = () => {
-        const destinoLugar = lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino));
-        if (!destinoLugar) return [];
-
-        if (destinoLugar.esDependencia !== 1) {
-            return ['Motivos personales', 'Urgencia'];
-        } else {
-            return ['Requerimiento laboral'];
-        }
+        return getTipoOptionsForDestino(formData.movement.idLugarDestino);
     };
 
     const tipoOptions = getTipoOptions();
