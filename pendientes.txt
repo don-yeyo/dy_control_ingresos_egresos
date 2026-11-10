@@ -1,23 +1,4 @@
-Que no haga falta hacer login cada vez que se cierra y abre, que recuerde el token de azure
+#Pendientes
 
-Historial de movimientos: 
-- Buscar por tipo
-- Buscar por solicitante
-- Buscar por autorizante
-- Buscar por lugar
-- Buscar por estado
-
-Historial de movimientos: boton deshacer para movimientos completados solo para porteria
-
-Nueva sección para autorizantes con Dashboard para mostrar estadisticas de movimientos
-- cantidad de movimientos por dia
-- cantidad de movimientos por tipo
-- cantidad de movimientos por usuario
-- cantidad de movimientos por lugar
-- cantidad de movimientos por estado
-- cantidad de movimientos por fecha
-- personal en exteriores: se registro el paso por porteria de origen pero no aun en destino cuando son dependencias, o se registro el paso por porteria pero no la vuelta de exteriores
-- personas que se retiraron sin retorno
-- cantidad de movimientos vencidos
-- top de personas que mas movimientos realizan
-- top de lugares con mas movimientos    
+##Features
+-   que no importe las tildes si al buscar empleados o autorizantes

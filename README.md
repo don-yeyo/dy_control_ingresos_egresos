@@ -606,9 +606,14 @@ Para que un usuario pueda acceder al módulo de portería y ver los movimientos 
 ### 📋 Estructuración de Motivos y Campos Dinámicos
 
 Se ha integrado el maestro de motivos desde la base de datos para brindar una categorización rigurosa de las solicitudes de ingreso/egreso:
-1. **Tabla `motivos`**: Almacena las categorías maestras administradas por el sistema (`id`, `nombre`).
-2. **Campo `idMotivo` (Tabla `movimientos`)**: Permite vincular de forma persistente e integrada el motivo seleccionado con el registro del movimiento.
-3. **Re-Diseño Dinámico e Interfaz Re-etiquetada**:
+1. **Tabla `motivos`**: Almacena las categorías maestras administradas por el sistema (`id`, `nombre`, `tipo`, `esExteriores`, `orden`, `deprecado`, `deprecado_motivo`).
+2. **Borrado Lógico y Deprecación de Motivos**:
+   - Se incorporaron las columnas `deprecado` (`DATETIME NULL`) y `deprecado_motivo` (`VARCHAR(255) NULL`).
+   - Si la columna `deprecado` tiene una fecha/hora asignada, el sistema la toma como flag para **no ofrecer ni permitir dicho motivo en nuevas solicitudes** (`GET /api/masters/motivos` filtra automáticamente `WHERE deprecado IS NULL`, y el endpoint de creación de movimientos valida que el motivo no esté deprecado).
+   - Se preserva la integridad referencial y visual de las solicitudes históricas asociadas a motivos deprecados (como `"Otros"` tanto en tipo Laboral como Personal).
+   - Script de referencia de base de datos disponible en [`deprecate_motivos.sql`](deprecate_motivos.sql).
+3. **Campo `idMotivo` (Tabla `movimientos`)**: Permite vincular de forma persistente e integrada el motivo seleccionado con el registro del movimiento.
+4. **Re-Diseño Dinámico e Interfaz Re-etiquetada**:
    - El campo "Tipo movimiento" se expone visualmente como **"Sentido / Dirección"** (internamente mantiene su enlace a `idTipo`). Si está activo (`VITE_PERMITIR_AUTORIZACIONES_DE_INGRESOS=true`), se ubica ocupando el **100% del ancho** del formulario en una sola línea.
    - El campo "Motivo" se expone como **"Tipo"** (internamente mantiene su enlace a `motivo`). Se ubica al **50% del ancho** en la misma fila que el nuevo desplegable **"Motivo"** (enlace a `idMotivo`).
    - **Lógica de opciones y preselección automática en "Tipo"**:

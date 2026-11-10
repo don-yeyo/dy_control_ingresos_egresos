@@ -1,6 +1,6 @@
 {
   "name": "control-entradas-salidas",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Sistema de Control de Ingresos y Egresos - Don Yeyo S.A.",
   "main": "server/index.js",
   "scripts": {

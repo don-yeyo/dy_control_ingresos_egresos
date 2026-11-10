@@ -428,6 +428,9 @@ const MovementForm = () => {
 
         let filtered = [...motivos];
 
+        // 0. Excluir motivos con flag de deprecado (borrado lógico)
+        filtered = filtered.filter(m => !m.deprecado);
+
         // 1. Filtrar por Lugar de destino ("Exteriores" o Dependencia)
         const destinoLugar = lugares.find(l => String(l.id) === String(formData.movement.idLugarDestino));
         const isExteriores = destinoLugar?.nombre.toLowerCase() === 'exteriores';

@@ -10,3 +10,4 @@ server/package-lock.json
 
 # Documentación interna, dumps de BD y credenciales (solo local)
 docs/
+pendientes.txt

@@ -206,13 +206,18 @@ exports.getMe = async (req, res) => {
     }
 };
 
-// @desc    Get all motivos
+// @desc    Get all motivos (excluye deprecados por defecto)
 // @route   GET /api/masters/motivos
 exports.getMotivos = async (req, res) => {
     try {
-        const [rows] = await pool.query(
-            'SELECT id, nombre, tipo, esExteriores, orden FROM motivos ORDER BY CASE WHEN orden IS NULL THEN 1 ELSE 0 END, orden ASC, nombre ASC'
-        );
+        const includeDeprecated = req.query.includeDeprecated === 'true';
+        let query = 'SELECT id, nombre, tipo, esExteriores, orden, deprecado, deprecado_motivo FROM motivos';
+        if (!includeDeprecated) {
+            query += ' WHERE deprecado IS NULL';
+        }
+        query += ' ORDER BY CASE WHEN orden IS NULL THEN 1 ELSE 0 END, orden ASC, nombre ASC';
+
+        const [rows] = await pool.query(query);
         res.json(rows);
     } catch (error) {
         console.error('Error in getMotivos:', error);

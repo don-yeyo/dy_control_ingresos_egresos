@@ -111,7 +111,10 @@ exports.createMovement = async (req, res) => {
         }
 
         // 4.5. Validar autorización duplicada
-        const toleranceMinutes = parseInt(process.env.DUPLICATE_CHECK_TOLERANCE_MINUTES || '15', 10);
+        let toleranceMinutes = parseInt(process.env.DUPLICATE_CHECK_TOLERANCE_MINUTES, 10);
+        if (isNaN(toleranceMinutes)) {
+            toleranceMinutes = 15;
+        }
         const [dupRows] = await connection.query(
             `SELECT m.id, m.personaAutorizante, l.apellido_nombre AS autorizanteNombre 
              FROM movimientos m
@@ -144,6 +147,22 @@ exports.createMovement = async (req, res) => {
                 error: 'DuplicateMovement',
                 message: `Ya existe una autorización activa para este autorizado, con persona autorizante ${autorizante}, en la misma fecha y hora aproximada. Por favor, anule la existente antes de generar una nueva.`
             });
+        }
+
+        // 4.6. Validar que el motivo no esté deprecado
+        if (movement.idMotivo) {
+            const [motivoRows] = await connection.query(
+                'SELECT id, deprecado FROM motivos WHERE id = ?',
+                [movement.idMotivo]
+            );
+            if (motivoRows.length === 0 || motivoRows[0].deprecado) {
+                await connection.rollback();
+                await connection.release();
+                return res.status(400).json({
+                    error: 'Validation failed',
+                    details: [{ message: 'El motivo seleccionado ya no está disponible para nuevas solicitudes' }]
+                });
+            }
         }
 
         // 5. Insert Movement
